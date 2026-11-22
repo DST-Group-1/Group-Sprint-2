@@ -1,0 +1,17 @@
+{
+  "mode": "train_5pct",
+  "random_seed": 42,
+  "architecture": "SmallSpectraCNN",
+  "n_classes": 65644,
+  "num_bins": 15000,
+  "train_spectra": 91851,
+  "validation_spectra": 10153,
+  "epochs": 8,
+  "batch_size": 64,
+  "pytorch_version": "2.2.1+cu121",
+  "device": "cuda",
+  "parameters": 8618508,
+  "peak_allocated_cuda_memory_gib": 0.20839834213256836,
+  "validation_definition": "Only molecules appearing in the training sample",
+  "note": "5% known-molecule classification"
+}
