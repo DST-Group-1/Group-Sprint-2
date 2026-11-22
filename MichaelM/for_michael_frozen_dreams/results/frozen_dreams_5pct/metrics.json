@@ -1,0 +1,14 @@
+{
+    "experiment": "Frozen DreaMS classification",
+    "training_spectra": 91851,
+    "validation_spectra_total": 10153,
+    "validation_spectra_evaluated": 10153,
+    "validation_unseen_class_spectra": 0,
+    "number_of_training_classes": 65644,
+    "validation_loss": 14.959910174561148,
+    "accuracy": 0.32709543977149613,
+    "balanced_accuracy": 0.2901713920979269,
+    "macro_f1": 0.27916848595413046,
+    "weighted_f1": 0.3198582610838249,
+    "best_validation_accuracy": 0.32709543977149613
+}
