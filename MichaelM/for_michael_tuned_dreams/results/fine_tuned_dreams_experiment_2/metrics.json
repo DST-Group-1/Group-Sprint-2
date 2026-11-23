@@ -1,0 +1,23 @@
+{
+    "experiment": "Fine-tuned DreaMS classification",
+    "training_spectra": 91851,
+    "validation_spectra": 10153,
+    "number_of_training_classes": 65644,
+    "best_epoch": 20,
+    "best_validation_accuracy": 0.4061853639318428,
+    "validation_loss": 5.688425957317084,
+    "accuracy": 0.4061853639318428,
+    "balanced_accuracy": 0.37395208645850825,
+    "macro_f1": 0.25491738470295233,
+    "weighted_f1": 0.3904313898287666,
+    "total_training_time_hours": 1.5285526031255723,
+    "hyperparameters": {
+        "batch_size": 32,
+        "max_epochs": 20,
+        "encoder_lr": 1e-05,
+        "classifier_lr": 0.0003,
+        "weight_decay": 0.01,
+        "dropout": 0.3,
+        "early_stopping_patience": 5
+    }
+}
