@@ -1,0 +1,101 @@
+{
+  "name": "base",
+  "config": {
+    "fraction": 0.05,
+    "part": -1,
+    "instruments": "all",
+    "min_spectra": 0,
+    "one_per_molecule": false,
+    "drop_dimers": false,
+    "bin_width": 0.1,
+    "intensity": "sqrt",
+    "neutral_losses": false,
+    "metadata": true,
+    "top_peaks": 0,
+    "width": 1024,
+    "depth": 3,
+    "dropout": 0.2,
+    "loss": "bce",
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "batch_size": 512,
+    "max_epochs": 30,
+    "patience": 4,
+    "sparse_grad": false,
+    "seed": 0
+  },
+  "train": {
+    "spectra": 112757,
+    "molecules": 13470,
+    "epochs": 25,
+    "best_epoch": 21,
+    "seconds": 29.579915499998606,
+    "seconds_per_epoch": 1.1831966199999442,
+    "seconds_to_best": 24.88736119999885,
+    "feature_share": 0.6248279242046544,
+    "spectra_per_second": 95298.61571106019,
+    "params": 19618816,
+    "dense_params": 4232192,
+    "inputs_per_spectrum": 30.346745656588947,
+    "train_flops": 72106980710400.0,
+    "peak_rss_mb": 6555.574272,
+    "peak_gpu_mb": 413.899264
+  },
+  "val": {
+    "class 1": {
+      "molecules": 1038,
+      "mrr": 0.4145911766539061,
+      "mrr_low": 0.3896238215723686,
+      "mrr_high": 0.43953098077264585,
+      "hit1": 0.2875722543352601,
+      "hit5": 0.5664739884393064,
+      "hit25": 0.8342967244701349,
+      "answer_in_window": 1.0
+    },
+    "class 2": {
+      "molecules": 961,
+      "mrr": 0.4016010162504629,
+      "mrr_low": 0.3760128674909582,
+      "mrr_high": 0.42758237228079127,
+      "hit1": 0.27471383975026015,
+      "hit5": 0.5327783558792925,
+      "hit25": 0.8116545265348595,
+      "answer_in_window": 1.0
+    },
+    "natural products": {
+      "molecules": 126,
+      "mrr": 0.3860222551445094,
+      "mrr_low": 0.3232567775027787,
+      "mrr_high": 0.4535760952994524,
+      "hit1": 0.23412698412698413,
+      "hit5": 0.5634920634920635,
+      "hit25": 0.8888888888888888,
+      "answer_in_window": 1.0
+    },
+    "classes 1+2": {
+      "molecules": 1999,
+      "mrr": 0.40834628213279106,
+      "mrr_low": 0.39163812537421006,
+      "mrr_high": 0.4260598107833558,
+      "hit1": 0.28139069534767386,
+      "hit5": 0.5502751375687844,
+      "hit25": 0.8234117058529264,
+      "answer_in_window": 1.0
+    },
+    "class 3": {
+      "molecules": 999,
+      "top1_tanimoto": NaN
+    }
+  },
+  "dev": {
+    "mrr": 0.4239356791823269,
+    "bce": 0.09094793349504471
+  },
+  "seen": {
+    "mrr": 0.98751564171123
+  },
+  "device": "NVIDIA GeForce RTX 4080",
+  "torch": "2.5.1+cu121",
+  "run_size": "full",
+  "created_utc": "2026-11-22T23:33:04Z"
+}

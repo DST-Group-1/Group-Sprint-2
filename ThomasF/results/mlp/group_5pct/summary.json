@@ -1,0 +1,146 @@
+{
+  "key": "1d7c6e8d1c",
+  "split": "stage_1_5pct",
+  "config": {
+    "fraction": 0.05,
+    "part": -1,
+    "instruments": "all",
+    "min_spectra": 0,
+    "one_per_molecule": false,
+    "drop_dimers": false,
+    "bin_width": 0.1,
+    "intensity": "log",
+    "neutral_losses": false,
+    "metadata": true,
+    "top_peaks": 0,
+    "width": 2048,
+    "depth": 5,
+    "dropout": 0.2,
+    "loss": "wbce",
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "batch_size": 512,
+    "max_epochs": 30,
+    "patience": 4,
+    "sparse_grad": false,
+    "seed": 0
+  },
+  "scoring": {
+    "all": "cosine",
+    "window": "cosine"
+  },
+  "train": {
+    "spectra": 91601,
+    "molecules": 65426,
+    "epochs": 18,
+    "best_epoch": 14,
+    "seconds": 37.29590429999371,
+    "seconds_per_epoch": 2.0719946833329836,
+    "seconds_to_best": 29.044550799990247,
+    "feature_share": 0.8088027671217511,
+    "spectra_per_second": 44209.090272689224,
+    "params": 51830784,
+    "dense_params": 21057536,
+    "inputs_per_spectrum": 30.595670352943745,
+    "train_flops": 208940155305984.0,
+    "peak_rss_mb": 6026.190848,
+    "peak_gpu_mb": 1629.740032
+  },
+  "dev_scoring": [
+    {
+      "candidates": "all",
+      "scoring": "tanimoto",
+      "dev MRR@25": 0.06155941746525545
+    },
+    {
+      "candidates": "all",
+      "scoring": "cosine",
+      "dev MRR@25": 0.06313940278203792
+    },
+    {
+      "candidates": "all",
+      "scoring": "loglik",
+      "dev MRR@25": 0.04075598015005909
+    },
+    {
+      "candidates": "window",
+      "scoring": "tanimoto",
+      "dev MRR@25": 0.6596804005484325
+    },
+    {
+      "candidates": "window",
+      "scoring": "cosine",
+      "dev MRR@25": 0.662114575215056
+    },
+    {
+      "candidates": "window",
+      "scoring": "loglik",
+      "dev MRR@25": 0.6320155713491006
+    }
+  ],
+  "settings": [
+    {
+      "setting": "known molecules, all training molecules",
+      "scoring": "cosine",
+      "spectra": 10153,
+      "molecules": 7786,
+      "top-1": 0.2792565974368385,
+      "top-5": 0.40018172395744933,
+      "MRR@25": 0.33427604830865815,
+      "hit@25": 0.49937974523765427,
+      "balanced accuracy": 0.24699774867349547,
+      "macro F1": 0.23632500588256283,
+      "answer among candidates": 1.0,
+      "median candidates": 65644.0,
+      "ceiling top-1": 0.9731923708747832
+    },
+    {
+      "setting": "known molecules, training molecules within \u00b110 ppm",
+      "scoring": "cosine",
+      "spectra": 10153,
+      "molecules": 7786,
+      "top-1": 0.6262795889556453,
+      "top-5": 0.8274401654683344,
+      "MRR@25": 0.7146971060485628,
+      "hit@25": 0.9140155619028858,
+      "balanced accuracy": 0.6236895254330393,
+      "macro F1": 0.6203715036908254,
+      "answer among candidates": 0.9290849995075348,
+      "median candidates": 7.0,
+      "ceiling top-1": 0.9249269509832889
+    },
+    {
+      "setting": "unseen molecules, training + validation molecules",
+      "scoring": "cosine",
+      "spectra": 12810,
+      "molecules": 12275,
+      "top-1": 0.014251803727242367,
+      "top-5": 0.07172165124170159,
+      "MRR@25": 0.04203944154736573,
+      "hit@25": 0.16307176981130053,
+      "balanced accuracy": 0.014277354567381032,
+      "macro F1": 0.012625933469110659,
+      "answer among candidates": 1.0,
+      "median candidates": 77919.0,
+      "ceiling top-1": 0.9827706031845717
+    },
+    {
+      "setting": "unseen molecules, training + validation molecules within \u00b110 ppm",
+      "scoring": "cosine",
+      "spectra": 12810,
+      "molecules": 12275,
+      "top-1": 0.4424668227946916,
+      "top-5": 0.7334504293520687,
+      "MRR@25": 0.574218094261632,
+      "hit@25": 0.9380171740827479,
+      "balanced accuracy": 0.4443516632722336,
+      "macro F1": 0.43557365919891383,
+      "answer among candidates": 0.9903981264637002,
+      "median candidates": 18.0,
+      "ceiling top-1": 0.9885245901639345
+    }
+  ],
+  "device": "NVIDIA GeForce RTX 4080",
+  "torch": "2.5.1+cu121",
+  "created_utc": "2026-11-23T00:46:53Z"
+}
