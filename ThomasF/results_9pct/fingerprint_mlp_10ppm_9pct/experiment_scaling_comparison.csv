@@ -1,0 +1,2 @@
+experiment,training_spectra,training_classes,accuracy_full_eligible_validation,balanced_accuracy_full_eligible_validation,macro_f1_full_eligible_validation,weighted_f1_full_eligible_validation,training_time_hours,time_measured
+Fingerprint MLP ±10 ppm 9%,179108,107862,0.6231734317343174,0.6169423614232358,0.4609910485579691,0.6296778403635646,0.026531221472238638,Training time
