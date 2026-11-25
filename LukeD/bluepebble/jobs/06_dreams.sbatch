@@ -1,12 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=casmi-06-dreams
-#SBATCH --time=24:00:00
+#SBATCH --time=48:00:00
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=40G
 # Michael's fine-tuned DreaMS notebook on the 100% group split, with his hyperparameters.
 # Training stops after DREAMS_MAX_EPOCHS (config.sh, default 3). On the RTX 4080 an epoch took 567 s
 # for the 9% split's 179,108 spectra, so an epoch of the 2.27 million here is about 2 hours there and
-# longer on a 3090. 3 epochs are 6.8 million training examples, more than the 3.6 million of the 9%
+# several hours on the RTX 2080 used here (Michael trains in fp32), hence the 48 h limit. The log's
+# first epoch time shows how long the rest will take. 3 epochs are 6.8 million training examples, more than the 3.6 million of the 9%
 # run's 20 epochs, so the model has had more updates than the converged 9% run.
 # Weights (over a GB) go to work storage; the small results go to MichaelM/results_bluepebble/.
 source "$SLURM_SUBMIT_DIR/config.sh"

@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=casmi-05-ms2ds
-#SBATCH --time=03:00:00
+#SBATCH --time=05:00:00
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=40G
 # David's MS2DeepScore notebook in its "100pct" mode: the pretrained model (no training) embeds every

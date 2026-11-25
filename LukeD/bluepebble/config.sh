@@ -8,10 +8,12 @@ export HPC_ACCOUNT="math002941"  # sacctmgr show user withassoc format=account w
 export CPU_PARTITION="short,compute"   # short: 3 days, compute: 14 days; every CPU job here is under 6 h
 export GPU_PARTITION="gpu"             # 14 days: for the jobs longer than 6 h (the MLP, DreaMS at 100%)
 export GPU_SHORT_PARTITION="gpu_short,gpu"   # gpu_short: 6 h, RTX 2080 and 3090 only: for the short GPU jobs
-# One card type for every GPU job, so all the 100% runs used the same hardware. The RTX 3090
-# (24 GB) is in both gpu and gpu_short, runs every torch build, and fits DreaMS at 100%. Avoid the
-# V100s: they are labelled both V100 and v100, and recent torch builds no longer support them.
-export GPU_GRES="gpu:rtx_3090:1"       # other choices: gpu:rtx_2080:1 (11 GB), gpu:a100:1 (gpu only)
+# One card type for every GPU job, so all the 100% runs used the same hardware. RTX 2080 (11 GB):
+# BluePebble's only RTX 3090 node (8 cards) was fully booked until Thursday night on 25 Nov, while
+# most 2080 nodes had free cards. DreaMS peaked at 4.4 GB on Michael's 4080 run, so 11 GB is enough.
+# The 2080 is in both gpu and gpu_short. Avoid the V100s: they are labelled both V100 and v100, and
+# recent torch builds no longer support them.
+export GPU_GRES="gpu:rtx_2080:1"       # other choices: gpu:rtx_3090:1 (24 GB, one node), gpu:a100:1 (gpu only)
 
 # ---- Paths ---------------------------------------------------------------------------------------
 # $HOME is small (about 20 GB), so the repo, data, environments and results all live on work storage.

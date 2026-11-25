@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=casmi-04-mlp
-#SBATCH --time=10:00:00
+#SBATCH --time=12:00:00
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=40G
 # Thomas's fingerprint MLP on the 100% group split (his section 13), scored on the same validation
@@ -10,8 +10,8 @@
 # saved runs: a saved run is found by a hash of its settings, so every run is loaded rather than
 # retrained, except the few whose weights were never committed (the final model, about 20 min). Its
 # section 10 also measures this card, so compute.json ends up with the same model timed on the 4080
-# and the 3090. If the saved runs did not load for some reason, the notebook retrains its whole
-# "full" plan, which takes 2 to 5 hours more but still fits in the time asked for.
+# and the RTX 2080. If the saved runs did not load for some reason, the notebook retrains its whole
+# "full" plan, which takes several hours more on a 2080 but should still fit in the time asked for.
 source "$SLURM_SUBMIT_DIR/config.sh"
 source "$BP_DIR/common.sh"
 log_hardware

@@ -105,4 +105,4 @@ if want models; then
     fi
 fi
 
-echo "== setup done. Next: edit config.sh (HPC_ACCOUNT etc.), then run: bash submit_all.sh"
+echo "== setup done. Next: bash submit_all.sh smoke, then the other steps once it passes (README step 6)"

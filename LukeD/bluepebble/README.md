@@ -18,9 +18,9 @@ its outputs as the record of the run (`*-bluepebble*.ipynb`).
 | data | `01_data` | `LukeD/01-data-and-validation` as it is | 8 cores, 32 GB | 10-15 min | `LukeD/01-...-bluepebble.ipynb` |
 | scaling | `02_loading_scaling` | `LukeD/02-loading-and-scaling`, 1 to 32 workers (optional: `bash submit_all.sh` without `scaling` skips it) | a whole node | about 1 h | `LukeD/benchmark_results/bluepebble/` |
 | splits | `03_group_splits` | Michael's split notebooks: `stage_1_5pct` (it defines the shared validation set), then `stage_3_100pct` | 160 GB | 30-60 min | the executed notebooks |
-| mlp | `04_mlp` | `ThomasF/03a-fingerprint-mlp`, section 13 on the 100% split, reusing his saved runs | 1 GPU | about 1 h | `ThomasF/results_bluepebble/` |
-| ms2ds | `05_ms2deepscore` | `DavidA/MS2DeepScore` in its 100% mode | 1 GPU | about 40 min | `DavidA/results_bluepebble/100pct/` |
-| dreams | `06_dreams` | `MichaelM/DreaMS_tuned_scaled_executed` on the 100% split, 3 epochs | 1 GPU | 8-10 h | `MichaelM/results_bluepebble/` |
+| mlp | `04_mlp` | `ThomasF/03a-fingerprint-mlp`, section 13 on the 100% split, reusing his saved runs | 1 GPU | 1-2 h | `ThomasF/results_bluepebble/` |
+| ms2ds | `05_ms2deepscore` | `DavidA/MS2DeepScore` in its 100% mode | 1 GPU | about 1 h | `DavidA/results_bluepebble/100pct/` |
+| dreams | `06_dreams` | `MichaelM/DreaMS_tuned_scaled_executed` on the 100% split, 3 epochs | 1 GPU | 15-24 h on an RTX 2080 | `MichaelM/results_bluepebble/` |
 
 `submit_all.sh` chains them: data, then scaling and splits; the three model jobs wait for the
 splits and for the smoke test. To skip the scaling benchmark, name the other steps:
@@ -62,7 +62,8 @@ splits and for the smoke test. To skip the scaling benchmark, name the other ste
 3. **Check `config.sh`.** It is filled in from the `sacctmgr` and `sinfo` output of 25 Nov: project
    `math002941`; CPU jobs on `short,compute`; GPU jobs that fit in 6 hours on `gpu_short,gpu` (Slurm
    starts them in whichever frees up first) and the longer ones on `gpu`; every GPU job on an RTX
-   3090, so all three 100% runs used the same kind of card. Only change it if `echo $WORK` is empty
+   2080 (the one 3090 node was fully booked that evening), so all three 100% runs used the same kind
+   of card. Only change it if `echo $WORK` is empty
    (see step 2).
 4. **Credentials and weights.** Copy your Kaggle API token to `~/.kaggle/` on BluePebble
    (`scp` it from your laptop, then `chmod 600` it), and copy David's model to
@@ -76,8 +77,10 @@ splits and for the smoke test. To skip the scaling benchmark, name the other ste
    splits; `dreams`; `ms2ds`, because the strands pin incompatible versions), downloads the
    competition with `kagglehub`, and downloads and checksums the DreaMS checkpoint. Everything that
    needs the internet happens here, as compute nodes may not have it.
-6. **Submit**: `bash submit_all.sh`. Or one step at a time, such as `bash submit_all.sh smoke`, and the
-   rest once it passes. Steps can be rerun by name: `bash submit_all.sh mlp`.
+6. **Submit**: `bash submit_all.sh smoke` first; once its log ends with "smoke test passed", submit the
+   rest with `bash submit_all.sh data scaling splits mlp ms2ds dreams` (the GPU jobs then wait only on
+   the splits). Leave `ms2ds` out until `ms2deepscore_model.pt` is in `models/`, and submit it later on
+   its own. Steps can be rerun by name: `bash submit_all.sh mlp`.
 7. **Watch**: `squeue --me` (and `squeue --me --start` for Slurm's estimate of when pending jobs
    start: every node was busy on 25 Nov, so expect to queue); logs are in `logs/`, e.g. `tail -f logs/casmi-04-mlp-<jobid>.out`;
    `sacct --starttime today` shows finished jobs; `scancel <jobid>` stops one.
@@ -91,9 +94,9 @@ cluster job). These runs are reproduced by steps 1 to 8; the results the report 
 ## Things that matter for the report
 
 - **The 100% times come from a different card.** The 5% and 9% runs were on an RTX 4080, the 100%
-  runs on an RTX 3090, so a time-against-data curve mixes two devices. Job 04 helps here: Thomas's
+  runs on an RTX 2080, so a time-against-data curve mixes two devices. Job 04 helps here: Thomas's
   section 10 times the same MLP on each card it runs on, so `compute.json` ends up with a measured
-  4080-to-3090 speed ratio to put the times on one scale (for the MLP's workload; DreaMS's may
+  4080-to-2080 speed ratio to put the times on one scale (for the MLP's workload; DreaMS's may
   differ a little). The MLP also has a same-card series already: Thomas's 1% to 100% runs, all on
   the 4080.
 - **The validation set grows with the training set.** Every strand scores only validation spectra
@@ -129,7 +132,7 @@ cluster job). These runs are reproduced by steps 1 to 8; the results the report 
 | `OUT_OF_MEMORY` in `sacct` | raise `--mem` at the top of that job script |
 | `TIMEOUT` | raise `--time`, within the partition's limit from `sinfo -s` |
 | `no kernel image is available` in the smoke test | that torch build does not support the card: keep `GPU_GRES` on an RTX type |
-| The 3090s stay busy for a day | switch `GPU_GRES` to `gpu:rtx_2080:1` (11 GB; DreaMS at 100% should fit, just) or `gpu:a100:1` (gpu partition only; set `GPU_SHORT_PARTITION=gpu` too), `scancel` the waiting jobs and resubmit them by name |
+| The GPU jobs stay pending for a day | see which cards are free with `sinfo -p gpu,gpu_short -N -O "NodeList:12,Gres:26,GresUsed:36,StateCompact:8"`, then switch `GPU_GRES` to `gpu:rtx_3090:1` (one node of 8) or `gpu:a100:1` (gpu partition only; set `GPU_SHORT_PARTITION=gpu` too), `scancel` the waiting jobs and resubmit them by name |
 | Setup stops with `No matching distribution found for pyopenms==3.4.0` | the login node's glibc is too old for that wheel; the current `setup_login_node.sh` installs 3.3.0 instead. `git pull` and rerun it: it rebuilds the half-made `dreams` env by itself |
 | `$'\r': command not found` | Windows line endings, from pasting or a Windows checkout: `sed -i 's/\r$//' <file>` |
 | A notebook cell fails | the traceback is in the log; the original notebook is untouched, so fix and resubmit the step |
