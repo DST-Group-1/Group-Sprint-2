@@ -1,0 +1,3 @@
+experiment,training_spectra,training_classes,accuracy_full_eligible_validation,balanced_accuracy_full_eligible_validation,macro_f1_full_eligible_validation,weighted_f1_full_eligible_validation,training_time_hours
+Experiment 2,91851,65644,0.4061853639318428,0.37395208645850825,0.25491738470295233,0.3904313898287666,1.5285526031255723
+Experiment 3,179108,107862,0.45453874538745387,0.4177221538833561,0.2880330435447314,0.4362427251090198,3.168634288046095

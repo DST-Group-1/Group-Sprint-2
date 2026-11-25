@@ -1,0 +1,31 @@
+decile,validation_spectra,accuracy,min_confidence,max_confidence,mean_confidence,table,share_answered,accuracy_of_most_confident
+1,1355.0,0.055350553505535055,0.0012082901,0.008200459,0.005119374235719557,by confidence decile (10 = most confident),,
+2,1355.0,0.1011070110701107,0.008201295,0.018298224,0.01272735432804428,by confidence decile (10 = most confident),,
+3,1355.0,0.16162361623616237,0.01830165,0.040972993,0.027946456739483393,by confidence decile (10 = most confident),,
+4,1355.0,0.2833948339483395,0.040980015,0.09487658,0.06440383713210332,by confidence decile (10 = most confident),,
+5,1355.0,0.34464944649446494,0.09491058,0.21723036,0.14846692187158672,by confidence decile (10 = most confident),,
+6,1355.0,0.4664206642066421,0.21743572,0.46914116,0.3310596493062731,by confidence decile (10 = most confident),,
+7,1355.0,0.5867158671586716,0.46935552,0.7812078,0.628185157402214,by confidence decile (10 = most confident),,
+8,1355.0,0.7512915129151292,0.78129923,0.9630426,0.8922762884944649,by confidence decile (10 = most confident),,
+9,1355.0,0.8413284132841329,0.9630494,0.9975712,0.9859647401623616,by confidence decile (10 = most confident),,
+10,1355.0,0.9535055350553505,0.9975751,1.0,0.9993806489225092,by confidence decile (10 = most confident),,
+,,,,,,most confident share answered,0.05,0.967551622418879
+,,,,,,most confident share answered,0.1,0.9535055350553505
+,,,,,,most confident share answered,0.15,0.9296259842519685
+,,,,,,most confident share answered,0.2,0.8974169741697416
+,,,,,,most confident share answered,0.25,0.8760330578512396
+,,,,,,most confident share answered,0.3,0.8487084870848709
+,,,,,,most confident share answered,0.35,0.8186419232391396
+,,,,,,most confident share answered,0.39999999999999997,0.783210332103321
+,,,,,,most confident share answered,0.44999999999999996,0.7506970641299
+,,,,,,most confident share answered,0.49999999999999994,0.7198523985239852
+,,,,,,most confident share answered,0.5499999999999999,0.6876006441223832
+,,,,,,most confident share answered,0.6,0.6573185731857318
+,,,,,,most confident share answered,0.65,0.6306766575840145
+,,,,,,most confident share answered,0.7,0.6039008961518186
+,,,,,,most confident share answered,0.75,0.5749852391261563
+,,,,,,most confident share answered,0.7999999999999999,0.5486162361623617
+,,,,,,most confident share answered,0.85,0.5225733634311512
+,,,,,,most confident share answered,0.9,0.4988929889298893
+,,,,,,most confident share answered,0.95,0.4761497824735861
+,,,,,,most confident share answered,1.0,0.45453874538745387

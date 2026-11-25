@@ -1,0 +1,11 @@
+grouping,category,validation_spectra,correct_predictions,accuracy
+Instrument family,Orbitrap/FT,6216,3489,0.5612934362934363
+Instrument family,timsTOF,4595,1274,0.27725788900979326
+Instrument family,QTOF/TOF,2134,1137,0.5328022492970946
+Instrument family,unknown,231,103,0.4458874458874459
+Instrument family,triple quadrupole,225,100,0.4444444444444444
+Instrument family,ion trap,148,56,0.3783783783783784
+Ionisation mode,positive,9959,4645,0.46641229039060145
+Ionisation mode,negative,3591,1514,0.4216095795043163
+Library,public libraries,8955,4885,0.5455053042992741
+Library,enveda-180,4595,1274,0.27725788900979326
