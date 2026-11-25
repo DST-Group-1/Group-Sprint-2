@@ -130,6 +130,7 @@ cluster job). These runs are reproduced by steps 1 to 8; the results the report 
 | `TIMEOUT` | raise `--time`, within the partition's limit from `sinfo -s` |
 | `no kernel image is available` in the smoke test | that torch build does not support the card: keep `GPU_GRES` on an RTX type |
 | The 3090s stay busy for a day | switch `GPU_GRES` to `gpu:rtx_2080:1` (11 GB; DreaMS at 100% should fit, just) or `gpu:a100:1` (gpu partition only; set `GPU_SHORT_PARTITION=gpu` too), `scancel` the waiting jobs and resubmit them by name |
+| Setup stops with `No matching distribution found for pyopenms==3.4.0` | the login node's glibc is too old for that wheel; the current `setup_login_node.sh` installs 3.3.0 instead. `git pull` and rerun it: it rebuilds the half-made `dreams` env by itself |
 | `$'\r': command not found` | Windows line endings, from pasting or a Windows checkout: `sed -i 's/\r$//' <file>` |
 | A notebook cell fails | the traceback is in the log; the original notebook is untouched, so fix and resubmit the step |
 | Job 01 says the counts differ | the Kaggle file or a package version changed; the log prints both sets of counts |
