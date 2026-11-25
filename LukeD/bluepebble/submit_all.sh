@@ -44,7 +44,5 @@ submit scaling jobs/02_loading_scaling.sbatch "${cpu[@]}" $(after data)
 submit splits  jobs/03_group_splits.sbatch    "${cpu[@]}" $(after data)
 submit mlp     jobs/04_mlp.sbatch             "${gpu[@]}" $(after smoke splits)
 submit ms2ds   jobs/05_ms2deepscore.sbatch    "${gpu_short[@]}" $(after smoke splits)
-# DreaMS in two parts: 5% and 9% fit gpu_short's 6 hours; 100% (several hours per epoch) needs gpu.
-submit dreams  jobs/06_dreams.sbatch          "${gpu_short[@]}" --array=0-1 --time=06:00:00 $(after smoke splits)
-submit dreams  jobs/06_dreams.sbatch          "${gpu[@]}" --array=2 $(after smoke splits)
+submit dreams  jobs/06_dreams.sbatch          "${gpu[@]}" $(after smoke splits)
 echo "watch with: squeue --me    logs in: $LOG_DIR"

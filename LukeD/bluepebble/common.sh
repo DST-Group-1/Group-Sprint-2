@@ -41,8 +41,3 @@ run_nb() {  # run_nb <notebook> <name of the copy, without .ipynb> [NAME=EXPRESS
         --ExecutePreprocessor.timeout=-1 --ExecutePreprocessor.kernel_name=python3 "$copy"
     echo "== finished $copy in $(( (SECONDS - start) / 60 )) min"
 }
-
-stage_name() {  # stage_name <array index> -> Michael's split folder name
-    local stages=(stage_1_5pct stage_2_9pct stage_3_100pct)
-    echo "${stages[$1]}"
-}
