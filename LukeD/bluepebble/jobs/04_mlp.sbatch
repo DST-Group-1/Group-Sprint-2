@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=casmi-04-mlp
 #SBATCH --time=16:00:00
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=48G
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=40G
 # Thomas's fingerprint MLP notebook, once per group split. The first pass trains the "full" plan of
 # sections 1-12 (1% to 100% of the protocol subsets, the ablations and the width grid; his notebook
 # puts this at 2-5 hours on one GPU) and saves every run. The later passes load those saved runs and

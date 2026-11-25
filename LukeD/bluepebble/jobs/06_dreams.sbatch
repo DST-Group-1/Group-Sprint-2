@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=casmi-06-dreams
 #SBATCH --time=24:00:00
-#SBATCH --cpus-per-task=6
-#SBATCH --mem=48G
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=40G
 #SBATCH --array=0-2
 # Michael's fine-tuned DreaMS notebook on each group split, same hyperparameters, one GPU per task.
 # Training is capped at DREAMS_MAX_EPOCHS (config.sh, default 3): on the RTX 4080 an epoch took 567 s

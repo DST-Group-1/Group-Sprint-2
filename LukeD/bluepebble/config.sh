@@ -2,14 +2,16 @@
 # Settings shared by every BluePebble job in this folder. Edit the lines marked EDIT once.
 # submit_all.sh and every job script source this file.
 
-# ---- EDIT: scheduler -----------------------------------------------------------------------------
-export HPC_ACCOUNT="CHANGE_ME"   # your project code; list yours with:
-                                 #   sacctmgr show user withassoc format=account where user=$USER
-export CPU_PARTITION="compute"   # check the names and time limits with: sinfo -s
-export GPU_PARTITION="gpu"
-export GPU_GRES="gpu:1"          # pin ONE card type for a whole scaling series, so every point of a
-                                 # curve ran on the same hardware, e.g. gpu:rtx_3090:1
-                                 # (the type names are in: sinfo -o "%20P %40G %l")
+# ---- Scheduler (from sacctmgr and sinfo on BluePebble, 25 Nov 2026) ---------------------------------
+export HPC_ACCOUNT="math002941"  # sacctmgr show user withassoc format=account where user=$USER
+# A comma-separated list lets Slurm start a job in whichever partition frees up first.
+export CPU_PARTITION="short,compute"   # short: 3 days, compute: 14 days; every CPU job here is under 6 h
+export GPU_PARTITION="gpu"             # 14 days: for the jobs longer than 6 h (the MLP, DreaMS at 100%)
+export GPU_SHORT_PARTITION="gpu_short,gpu"   # gpu_short: 6 h, RTX 2080 and 3090 only: for the short GPU jobs
+# One card type for every GPU job, so each scaling curve ran on one kind of hardware. The RTX 3090
+# (24 GB) is in both gpu and gpu_short, runs every torch build, and fits DreaMS at 100%. Avoid the
+# V100s: they are labelled both V100 and v100, and recent torch builds no longer support them.
+export GPU_GRES="gpu:rtx_3090:1"       # other choices: gpu:rtx_2080:1 (11 GB), gpu:a100:1 (gpu only)
 
 # ---- Paths ---------------------------------------------------------------------------------------
 # $HOME is small (about 20 GB), so the repo, data, environments and results all live on work storage.
@@ -25,6 +27,7 @@ export CHECKPOINT_DIR="$CASMI_WORK/checkpoints"          # weights trained here 
 export OUTPUT_DIR_LARGE="$CASMI_WORK/results"            # large outputs such as embeddings (never committed)
 export CONDA_ROOT="$CASMI_WORK/miniforge3"
 export KAGGLEHUB_CACHE="$CASMI_WORK/kagglehub"
+export PIP_CACHE_DIR="$CASMI_WORK/pip-cache"             # torch wheels would otherwise fill the 25 GB home quota
 export BP_DIR="$REPO/LukeD/bluepebble"
 export LOG_DIR="$BP_DIR/logs"
 

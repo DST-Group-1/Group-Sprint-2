@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=casmi-05-ms2ds
 #SBATCH --time=06:00:00
-#SBATCH --cpus-per-task=6
-#SBATCH --mem=48G
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=40G
 #SBATCH --array=0-2
 # David's MS2DeepScore notebook (pretrained model, no training: it embeds the reference spectra and
 # searches them). One array task per reference set; they can run side by side on different GPUs.

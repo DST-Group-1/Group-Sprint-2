@@ -57,9 +57,11 @@ splits and for the smoke test. Model weights, embeddings and the splits stay on 
    ```
    If `$WORK` is not set, use the work path `user-quota` shows: `export CASMI_WORK=<that path>/casmi26`
    before the commands, and add the same line to `~/.bashrc`.
-3. **Edit `config.sh`**: the project code, the two partition names, and `GPU_GRES`. Pin one card
-   type (for example `gpu:rtx_3090:1`, with the name `sinfo` showed), so every point of a scaling
-   curve ran on the same hardware.
+3. **Check `config.sh`.** It is filled in from the `sacctmgr` and `sinfo` output of 25 Nov: project
+   `math002941`; CPU jobs on `short,compute`; GPU jobs that fit in 6 hours on `gpu_short,gpu` (Slurm
+   starts them in whichever frees up first) and the longer ones on `gpu`; every GPU job on an RTX
+   3090, so each scaling curve ran on one kind of card. Only change it if `echo $WORK` is empty
+   (see step 2).
 4. **Credentials and weights.** Copy your Kaggle API token to `~/.kaggle/` on BluePebble
    (`scp` it from your laptop, then `chmod 600` it), and copy David's model to
    `$WORK/casmi26/models/ms2deepscore_model.pt`.
@@ -74,7 +76,8 @@ splits and for the smoke test. Model weights, embeddings and the splits stay on 
    needs the internet happens here, as compute nodes may not have it.
 6. **Submit**: `bash submit_all.sh`. Or one step at a time, such as `bash submit_all.sh smoke`, and the
    rest once it passes. Steps can be rerun by name: `bash submit_all.sh mlp`.
-7. **Watch**: `squeue --me`; logs are in `logs/`, e.g. `tail -f logs/casmi-04-mlp-<jobid>.out`;
+7. **Watch**: `squeue --me` (and `squeue --me --start` for Slurm's estimate of when pending jobs
+   start: every node was busy on 25 Nov, so expect to queue); logs are in `logs/`, e.g. `tail -f logs/casmi-04-mlp-<jobid>.out`;
    `sacct --starttime today` shows finished jobs; `scancel <jobid>` stops one.
 8. **Bring the results back**: `bash collect.sh` writes `logs/sacct.csv` (wall time, peak memory and
    allocation of every job, for the compute table in the report) and lists the small result files.
@@ -102,7 +105,7 @@ cluster job). These runs are reproduced by steps 1 to 8; the results the report 
   training across GPUs.
 - **`os.cpu_count()` reports the whole node**, not what Slurm allocated. Job 02 takes a whole node
   for that reason, which also keeps other jobs out of its timings. The MLP job runs on part of a GPU
-  node, so in Thomas's section 10 the CPU thread counts above the 8 allocated cores share those 8
+  node, so in Thomas's section 10 the CPU thread counts above the 4 allocated cores share those 4
   cores and should not be read as scaling (`os.process_cpu_count()` in Python 3.13 and later counts
   only the usable cores).
 - **Storage is a 1000× constraint too.** The raw training file is 3 GB, so 1000 times is about 3 TB,
@@ -121,10 +124,13 @@ cluster job). These runs are reproduced by steps 1 to 8; the results the report 
 | A job stays pending | `squeue --me -o "%i %j %T %r"` shows why. `DependencyNeverSatisfied` means an earlier step failed: read its log, `scancel` the waiting jobs, fix it, resubmit those steps by name |
 | `OUT_OF_MEMORY` in `sacct` | raise `--mem` at the top of that job script |
 | `TIMEOUT` | raise `--time`, within the partition's limit from `sinfo -s` |
-| `no kernel image is available` in the smoke test | that torch build does not support the card: pin `GPU_GRES` to an RTX card type |
+| `no kernel image is available` in the smoke test | that torch build does not support the card: keep `GPU_GRES` on an RTX type |
+| The 3090s stay busy for a day | move the whole series to `gpu:rtx_2080:1` (11 GB; DreaMS at 100% should fit, just) or `gpu:a100:1` (gpu partition only; set `GPU_SHORT_PARTITION=gpu` too), and rerun every GPU step, not only the waiting one |
+| `$'\r': command not found` | Windows line endings, from pasting or a Windows checkout: `sed -i 's/\r$//' <file>` |
 | A notebook cell fails | the traceback is in the log; the original notebook is untouched, so fix and resubmit the step |
 | Job 01 says the counts differ | the Kaggle file or a package version changed; the log prints both sets of counts |
 
-What this could not check from outside: the exact partition and GPU type names, their time limits,
-and whether compute nodes reach the internet. The ACRC documentation is behind the university
-login, so step 1 looks them up, and the defaults in `config.sh` (`compute`, `gpu`) may need changing.
+Partitions, card types and quotas are from BluePebble's own `sinfo`, `sacctmgr` and `user-quota` on
+25 Nov 2026. Not checked: whether compute nodes reach the internet (so everything is downloaded
+during setup), and how many cores and how much memory each GPU node has; the GPU jobs ask for 4
+cores and 40 GB, which `sinfo -p gpu -N -o "%N %G %c %m"` can confirm.
