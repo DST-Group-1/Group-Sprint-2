@@ -1,0 +1,138 @@
+{
+  "NVIDIA GeForce RTX 4080": {
+    "device": "NVIDIA GeForce RTX 4080",
+    "cpu_count": 32,
+    "batch_size": {
+      "64": {
+        "seconds_per_step": 0.004813266665829967,
+        "feature_seconds_per_step": 0.00029138333290272084,
+        "spectra_per_second": 13296.583057478341,
+        "peak_gpu_mb": 566.928384
+      },
+      "128": {
+        "seconds_per_step": 0.00804575000074692,
+        "feature_seconds_per_step": 0.0003914249997857648,
+        "spectra_per_second": 15909.02028873843,
+        "peak_gpu_mb": 567.486464
+      },
+      "256": {
+        "seconds_per_step": 0.008342649999879844,
+        "feature_seconds_per_step": 0.0005138500000612112,
+        "spectra_per_second": 30685.693395226586,
+        "peak_gpu_mb": 568.60416
+      },
+      "512": {
+        "seconds_per_step": 0.008900358332539327,
+        "feature_seconds_per_step": 0.000853083333519559,
+        "spectra_per_second": 57525.773780157826,
+        "peak_gpu_mb": 570.832384
+      },
+      "1024": {
+        "seconds_per_step": 0.01051789166619225,
+        "feature_seconds_per_step": 0.0014446083338649867,
+        "spectra_per_second": 97357.91473223212,
+        "peak_gpu_mb": 577.951744
+      },
+      "2048": {
+        "seconds_per_step": 0.008439600000201608,
+        "feature_seconds_per_step": 0.002376850000170331,
+        "spectra_per_second": 242665.5291662018,
+        "peak_gpu_mb": 646.762496
+      },
+      "4096": {
+        "seconds_per_step": 0.014159008333081147,
+        "feature_seconds_per_step": 0.00495648333162535,
+        "spectra_per_second": 289285.79626795574,
+        "peak_gpu_mb": 805.643264
+      }
+    },
+    "batch_size_cpu": {
+      "128": {
+        "seconds_per_step": 0.031393475001095794,
+        "feature_seconds_per_step": 0.0003316000002087094,
+        "spectra_per_second": 4077.2803901298644
+      },
+      "512": {
+        "seconds_per_step": 0.04459452500304906,
+        "feature_seconds_per_step": 0.0008650750023662113,
+        "spectra_per_second": 11481.230038104299
+      },
+      "2048": {
+        "seconds_per_step": 0.08476265000172134,
+        "feature_seconds_per_step": 0.0025739499997143866,
+        "spectra_per_second": 24161.58532040244
+      }
+    },
+    "threads": {
+      "1": {
+        "seconds_per_step": 0.16001108333148295,
+        "feature_seconds_per_step": 0.0011478333338648856,
+        "spectra_per_second": 3199.778348724307
+      },
+      "2": {
+        "seconds_per_step": 0.09555003333177108,
+        "feature_seconds_per_step": 0.0009565833339972111,
+        "spectra_per_second": 5358.44920348925
+      },
+      "4": {
+        "seconds_per_step": 0.06091081666818354,
+        "feature_seconds_per_step": 0.0008388500003396379,
+        "spectra_per_second": 8405.731986638108
+      },
+      "8": {
+        "seconds_per_step": 0.04950724999919961,
+        "feature_seconds_per_step": 0.0007925166670853893,
+        "spectra_per_second": 10341.919618000951
+      },
+      "16": {
+        "seconds_per_step": 0.045039683333016,
+        "feature_seconds_per_step": 0.0008102999975866018,
+        "spectra_per_second": 11367.75310373202
+      },
+      "24": {
+        "seconds_per_step": 0.04389895000106966,
+        "feature_seconds_per_step": 0.0008027499995174973,
+        "spectra_per_second": 11663.149118316598
+      },
+      "32": {
+        "seconds_per_step": 0.04089461666687081,
+        "feature_seconds_per_step": 0.000799966665605704,
+        "spectra_per_second": 12519.98531177765
+      }
+    },
+    "input_layer": {
+      "0.1 Da, dense": {
+        "seconds_per_step": 0.005277433331987898,
+        "feature_seconds_per_step": 0.0008684333333803806,
+        "spectra_per_second": 97016.8579670414,
+        "peak_gpu_mb": 570.814976
+      },
+      "0.1 Da, sparse": {
+        "seconds_per_step": 0.003877750002478327,
+        "feature_seconds_per_step": 0.0009093833335403664,
+        "spectra_per_second": 132035.32968158682,
+        "peak_gpu_mb": 555.163136
+      },
+      "0.01 Da, dense": {
+        "seconds_per_step": 0.024907049998243263,
+        "feature_seconds_per_step": 0.00082401666441001,
+        "spectra_per_second": 20556.428803736784,
+        "peak_gpu_mb": 3340.222976
+      },
+      "0.01 Da, sparse": {
+        "seconds_per_step": 0.0039571833331137896,
+        "feature_seconds_per_step": 0.0008801833343265267,
+        "spectra_per_second": 129384.9581634426,
+        "peak_gpu_mb": 2309.848064
+      }
+    },
+    "scoring": {
+      "10": 4.863333257768924e-05,
+      "100": 7.116666529327631e-05,
+      "1000": 0.0005178333328027899,
+      "10000": 0.008655700000720875,
+      "100000": 0.08587816666598276
+    },
+    "minutes": 0.1873060216667606
+  }
+}

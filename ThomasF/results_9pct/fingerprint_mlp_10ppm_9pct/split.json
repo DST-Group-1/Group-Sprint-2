@@ -1,0 +1,6 @@
+{
+  "split": "stage_2_9pct",
+  "split_id": "58d69041c799",
+  "train_spectra": 179108,
+  "known_validation_spectra": 13550
+}

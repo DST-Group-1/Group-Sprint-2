@@ -1,0 +1,97 @@
+{
+  "model": "fingerprint MLP",
+  "config": {
+    "fraction": 1.0,
+    "part": -1,
+    "instruments": "all",
+    "min_spectra": 0,
+    "one_per_molecule": false,
+    "drop_dimers": false,
+    "bin_width": 0.1,
+    "intensity": "log",
+    "neutral_losses": false,
+    "metadata": true,
+    "top_peaks": 0,
+    "width": 2048,
+    "depth": 5,
+    "dropout": 0.2,
+    "loss": "wbce",
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "batch_size": 512,
+    "max_epochs": 30,
+    "patience": 4,
+    "sparse_grad": false,
+    "seed": 0
+  },
+  "scoring": "tanimoto",
+  "aggregate": "mean_prob",
+  "val": {
+    "class 1": {
+      "molecules": 1038,
+      "mrr": 0.8352665624010405,
+      "mrr_low": 0.8168963329796911,
+      "mrr_high": 0.8528514821880173,
+      "hit1": 0.7495183044315993,
+      "hit5": 0.9373795761078998,
+      "hit25": 0.9903660886319846,
+      "answer_in_window": 1.0
+    },
+    "class 2": {
+      "molecules": 961,
+      "mrr": 0.7473313023386234,
+      "mrr_low": 0.7268702833454763,
+      "mrr_high": 0.7693816818059556,
+      "hit1": 0.627471383975026,
+      "hit5": 0.8938605619146722,
+      "hit25": 0.9698231009365245,
+      "answer_in_window": 1.0
+    },
+    "natural products": {
+      "molecules": 126,
+      "mrr": 0.7505767138505233,
+      "mrr_low": 0.6885458360532765,
+      "mrr_high": 0.8122496349549921,
+      "hit1": 0.6428571428571429,
+      "hit5": 0.8492063492063492,
+      "hit25": 0.9841269841269841,
+      "answer_in_window": 1.0
+    },
+    "classes 1+2": {
+      "molecules": 1999,
+      "mrr": 0.7929925329263117,
+      "mrr_low": 0.7784093119833371,
+      "mrr_high": 0.8072469185769675,
+      "hit1": 0.6908454227113556,
+      "hit5": 0.9164582291145573,
+      "hit25": 0.9804902451225613,
+      "answer_in_window": 1.0
+    },
+    "class 3": {
+      "molecules": 999,
+      "top1_tanimoto": NaN
+    }
+  },
+  "train": {
+    "spectra": 2289876,
+    "molecules": 270197,
+    "epochs": 23,
+    "best_epoch": 20,
+    "seconds": 1139.588445899979,
+    "seconds_per_epoch": 49.54732373478169,
+    "seconds_to_best": 991.0401104999837,
+    "feature_share": 0.8093294337235561,
+    "spectra_per_second": 46215.93715651147,
+    "params": 51830784,
+    "dense_params": 21057536,
+    "inputs_per_spectrum": 30.54106597911852,
+    "train_flops": 6674007571390464.0,
+    "peak_rss_mb": 6460.370944,
+    "peak_gpu_mb": 1215.10144
+  },
+  "files": [
+    "val_top25.parquet",
+    "test_top25.parquet"
+  ],
+  "note": "test rankings are written here and scored only in 05"
+}
