@@ -1,0 +1,2652 @@
+---
+title: "Classical Spectral Matching: Supplementary Analysis"
+author: "Morgan Lee"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    code_folding: show
+---
+
+```{r}
+#install.packages("arrow")
+#install.packages("dplyr")
+```
+
+```{r}
+library(arrow)
+library(dplyr)
+
+# Select molecules.parquet from Luke's cleaned folder
+path <- file.choose()
+folder <- dirname(path)
+
+# Read molecule information
+molecules <- read_parquet(path)
+
+# Read the held-out observations
+heldout <- read_parquet(
+  file.path(folder, "heldout.parquet")
+)
+
+# Open all the training parts as one dataset
+train <- open_dataset(
+  file.path(folder, "spectra_train")
+)
+
+# Check the data
+dim(molecules)
+dim(heldout)
+names(heldout)
+train
+```
+
+
+#```{r}
+# How many molecules are in each split?
+table(molecules$split)
+
+# Look at the simulated test classes
+table(molecules$split, molecules$sim_class)
+
+# Keep only the validation observations
+validation <- heldout |>
+  filter(split == "val")
+
+# Look at class 1
+val_class1 <- validation |>
+  filter(sim_class == 1)
+
+nrow(val_class1)
+length(unique(val_class1$inchikey14))
+#```
+
+```{r}
+# Check the validation split
+
+# Count molecules in each split
+table(molecules$split)
+
+# Count molecules in each simulated class
+table(molecules$split, molecules$sim_class)
+
+# Select validation spectra using base R
+val_class1 <- heldout[
+  heldout$split == "val" & heldout$sim_class == 1,
+  c("row_id", "inchikey14", "split", "sim_class", "pool")
+]
+
+# Check the results
+nrow(val_class1)
+length(unique(val_class1$inchikey14))
+
+head(val_class1)
+```
+
+
+```{r}
+# Read the first five reference spectra
+example <- train |>
+  select(row_id, inchikey14, mzs, intensities,
+         bins, bin_intensities) |>
+  head(5) |>
+  collect()
+
+# Plot the first spectrum
+plot(
+  example$mzs[[1]],
+  example$intensities[[1]],
+  type = "h",
+  xlab = "Mass-to-charge ratio (m/z)",
+  ylab = "Relative intensity",
+  main = "Example mass spectrum"
+)
+```
+
+
+```{r}
+cosine_sparse <- function(bins1, values1, bins2, values2) {
+
+  # Find bins that occur in both spectra
+  matches <- match(bins1, bins2)
+  keep <- !is.na(matches)
+
+  # Calculate the dot product
+  numerator <- sum(values1[keep] * values2[matches[keep]])
+
+  # Calculate the lengths
+  norm1 <- sqrt(sum(values1^2))
+  norm2 <- sqrt(sum(values2^2))
+
+  if (norm1 == 0 || norm2 == 0) {
+    return(0)
+  }
+
+  return(numerator / (norm1 * norm2))
+}
+```
+
+```{r}
+cosine_sparse(
+  example$bins[[1]],
+  example$bin_intensities[[1]],
+  example$bins[[1]],
+  example$bin_intensities[[1]]
+)
+```
+
+
+```{r}
+cosine_sparse(
+  example$bins[[1]],
+  example$bin_intensities[[1]],
+  example$bins[[2]],
+  example$bin_intensities[[2]]
+)
+```
+
+```{r}
+spectra_example <- train |>
+  dplyr::select(row_id, inchikey14, mzs, intensities,
+                bins, bin_intensities) |>
+  head(5) |>
+  dplyr::collect()
+```
+
+
+
+```{r}
+# Select one validation spectrum
+query <- heldout[
+  heldout$split == "val" & heldout$sim_class == 1,
+][1, ]
+
+# Compare it with our five training spectra
+similarities <- numeric(nrow(spectra_example))
+
+for (i in 1:nrow(spectra_example)) {
+  similarities[i] <- cosine_sparse(
+    query$bins[[1]],
+    query$bin_intensities[[1]],
+    spectra_example$bins[[i]],
+    spectra_example$bin_intensities[[i]]
+  )
+}
+
+# Show the results, highest similarity first
+results <- data.frame(
+  molecule = spectra_example$inchikey14,
+  similarity = similarities
+)
+
+results <- results[order(-results$similarity), ]
+
+print(results)
+```
+
+
+```{r}
+dim(spectra_example)
+```
+
+```{r}
+#Precursor mass filtering
+query$inchikey14
+query$precursor_mz
+query$adduct
+query$bins[[1]]
+```
+
+
+```{r}
+# Precursor information
+query_mz <- query$precursor_mz[1]
+query_adduct <- query$adduct[1]
+
+# Mass tolerance
+ppm <- 20
+tolerance <- query_mz * ppm / 1000000
+
+lower <- query_mz - tolerance
+upper <- query_mz + tolerance
+
+# Select plausible reference spectra
+candidates <- train |>
+  dplyr::filter(
+    precursor_mz >= lower,
+    precursor_mz <= upper,
+    adduct == query_adduct
+  ) |>
+  dplyr::select(row_id, inchikey14, precursor_mz,
+                bins, bin_intensities) |>
+  dplyr::collect()
+
+nrow(candidates)
+```
+
+```{r}
+similarities <- numeric(nrow(candidates))
+
+for (i in seq_len(nrow(candidates))) {
+
+  similarities[i] <- cosine_sparse(
+    query$bins[[1]],
+    query$bin_intensities[[1]],
+    candidates$bins[[i]],
+    candidates$bin_intensities[[i]]
+  )
+}
+
+results <- data.frame(
+  molecule = candidates$inchikey14,
+  similarity = similarities
+)
+
+results <- results[order(-results$similarity), ]
+
+head(results, 25)
+```
+
+
+```{r}
+# Keep the highest similarity for each molecule
+if (nrow(results) > 0) {
+
+  ranked <- aggregate(
+    similarity ~ molecule,
+    data = results,
+    FUN = max
+  )
+
+  ranked <- ranked[order(-ranked$similarity), ]
+
+} else {
+
+  ranked <- results
+
+}
+
+# Top 25 predicted molecules
+predictions <- head(ranked, 25)
+
+print(predictions)
+```
+
+```{r}
+true_molecule <- query$inchikey14[1]
+
+true_molecule
+
+match(true_molecule, predictions$molecule)
+```
+
+
+```{r}
+nrow(candidates)
+head(predictions)
+true_molecule
+match(true_molecule, predictions$molecule)
+```
+
+``{r}
+search_spectrum <- function(query, reference, ppm = 20) {
+
+  # Precursor mass filtering
+  query_mz <- query$precursor_mz[1]
+  query_adduct <- query$adduct[1]
+
+  tolerance <- query_mz * ppm / 1000000
+
+  lower <- query_mz - tolerance
+  upper <- query_mz + tolerance
+
+  keep <- which(
+    reference$precursor_mz >= lower &
+    reference$precursor_mz <= upper &
+    reference$adduct == query_adduct
+  )
+
+  candidates <- reference[keep, ]
+
+  # Return empty predictions if no candidates
+  if (nrow(candidates) == 0) {
+    return(data.frame(
+      molecule = character(0),
+      similarity = numeric(0)
+    ))
+  }
+
+  # Calculate cosine similarities
+  similarities <- numeric(nrow(candidates))
+
+  for (i in seq_len(nrow(candidates))) {
+
+    similarities[i] <- cosine_sparse(
+      query$bins[[1]],
+      query$bin_intensities[[1]],
+      candidates$bins[[i]],
+      candidates$bin_intensities[[i]]
+    )
+  }
+
+  results <- data.frame(
+    molecule = candidates$inchikey14,
+    similarity = similarities
+  )
+
+  # Keep the best score for each molecule
+  ranked <- aggregate(
+    similarity ~ molecule,
+    data = results,
+    FUN = max
+  )
+
+  ranked <- ranked[order(-ranked$similarity), ]
+
+  return(ranked)
+}
+``
+
+
+``{r}
+search_spectrum <- function(query, reference, ppm = 20, index = NULL) {
+
+  # Precursor mass filtering
+  query_mz <- query$precursor_mz[1]
+  query_adduct <- query$adduct[1]
+
+  tolerance <- query_mz * ppm / 1000000
+
+  lower <- query_mz - tolerance
+  upper <- query_mz + tolerance
+
+  # Use the mass index if available
+  if (!is.null(index)) {
+
+    mass_bins <- seq(floor(lower), floor(upper))
+    keys <- paste(query_adduct, mass_bins)
+
+    rows <- unlist(index[keys], use.names = FALSE)
+
+    reference <- reference[as.integer(rows), ]
+  }
+
+  # Apply exact mass and adduct filtering
+  keep <- which(
+    reference$precursor_mz >= lower &
+    reference$precursor_mz <= upper &
+    reference$adduct == query_adduct
+  )
+
+  candidates <- reference[keep, ]
+
+  # Return empty results if there are no candidates
+  if (nrow(candidates) == 0) {
+    return(data.frame(
+      molecule = character(0),
+      similarity = numeric(0)
+    ))
+  }
+
+  # Calculate cosine similarities
+  similarities <- numeric(nrow(candidates))
+
+  for (i in seq_len(nrow(candidates))) {
+
+    similarities[i] <- cosine_sparse(
+      query$bins[[1]],
+      query$bin_intensities[[1]],
+      candidates$bins[[i]],
+      candidates$bin_intensities[[i]]
+    )
+  }
+
+  results <- data.frame(
+    molecule = candidates$inchikey14,
+    similarity = similarities
+  )
+
+  # Keep the best score for each molecule
+  ranked <- aggregate(
+    similarity ~ molecule,
+    data = results,
+    FUN = max
+  )
+
+  ranked <- ranked[order(-ranked$similarity), ]
+
+  return(ranked)
+}
+``
+```{r}
+search_spectrum <- function(query, reference, ppm = 20, index = NULL) {
+
+  query_mz <- query$precursor_mz[1]
+  query_adduct <- query$adduct[1]
+
+  tolerance <- query_mz * ppm / 1000000
+  lower <- query_mz - tolerance
+  upper <- query_mz + tolerance
+
+  if (!is.null(index)) {
+    keys <- paste(query_adduct, seq(floor(lower), floor(upper)))
+    rows <- unlist(index[keys], use.names = FALSE)
+    reference <- reference[as.integer(rows), ]
+  }
+
+  keep <- which(
+    reference$precursor_mz >= lower &
+    reference$precursor_mz <= upper &
+    reference$adduct == query_adduct
+  )
+
+  candidates <- reference[keep, ]
+
+  if (nrow(candidates) == 0) {
+    return(data.frame(molecule = character(0),
+                      similarity = numeric(0)))
+  }
+
+  similarities <- numeric(nrow(candidates))
+
+  for (i in seq_len(nrow(candidates))) {
+    similarities[i] <- cosine_sparse(
+      query$bins[[1]],
+      query$bin_intensities[[1]],
+      candidates$bins[[i]],
+      candidates$bin_intensities[[i]]
+    )
+  }
+
+  results <- data.frame(
+    molecule = candidates$inchikey14,
+    similarity = similarities
+  )
+
+  ranked <- aggregate(similarity ~ molecule,
+                      data = results, FUN = max)
+
+  ranked <- ranked[order(-ranked$similarity), ]
+
+  return(ranked)
+}
+```
+
+
+
+```{r}
+# Select molecules belonging to the 1% subset
+fraction <- 0.01
+
+small_ids <- molecules$inchikey14[
+  which(molecules$train_subset_rank < fraction)
+]
+
+length(small_ids)
+```
+
+```{r}
+small_train <- train |>
+  dplyr::filter(inchikey14 %in% small_ids) |>
+  dplyr::select(
+    row_id,
+    inchikey14,
+    precursor_mz,
+    adduct,
+    bins,
+    bin_intensities
+  ) |>
+  dplyr::collect()
+
+dim(small_train)
+
+length(unique(small_train$inchikey14))
+```
+
+
+```{r}
+ranked_small <- search_spectrum(query, small_train)
+
+head(ranked_small, 25)
+```
+
+```{r}
+match(
+  query$inchikey14[1],
+  head(ranked_small, 25)$molecule
+)
+```
+
+
+```{r}
+query$inchikey14[1] %in% small_train$inchikey14
+```
+
+```{r}
+# Unique class 1 validation molecules
+validation_ids <- unique(val_class1$inchikey14)
+
+# Check which are represented in the reference library
+available <- validation_ids %in% small_train$inchikey14
+
+# Number available
+sum(available)
+
+# Proportion available
+mean(available)
+```
+
+
+```{r}
+dim(small_train)
+head(ranked_small)
+sum(available)
+mean(available)
+```
+
+```{r}
+val_spectra <- heldout[
+  which(heldout$split == "val" & heldout$sim_class == 1),
+  c("row_id", "inchikey14", "precursor_mz",
+    "adduct", "bins", "bin_intensities")
+]
+
+dim(val_spectra)
+```
+
+```{r}
+query_groups <- split(
+  seq_len(nrow(val_spectra)),
+  val_spectra$inchikey14
+)
+
+length(query_groups)
+```
+
+``{r}
+search_molecule <- function(queries, reference, ppm = 20) {
+
+  all_results <- list()
+
+  # Search using each spectrum of the query molecule
+  for (i in seq_len(nrow(queries))) {
+
+    all_results[[i]] <- search_spectrum(
+      queries[i, ],
+      reference,
+      ppm
+    )
+
+  }
+
+  # Combine the results
+  combined <- do.call(rbind, all_results)
+
+  if (nrow(combined) == 0) {
+    return(combined)
+  }
+
+  # Keep the maximum similarity for each candidate
+  ranked <- aggregate(
+    similarity ~ molecule,
+    data = combined,
+    FUN = max
+  )
+
+  ranked <- ranked[order(-ranked$similarity), ]
+
+  return(ranked)
+}
+``
+
+
+``{r}
+search_molecule <- function(queries, reference, ppm = 20, index = NULL) {
+
+  all_results <- list()
+
+  for (i in seq_len(nrow(queries))) {
+
+    all_results[[i]] <- search_spectrum(
+      queries[i, ],
+      reference,
+      ppm,
+      index
+    )
+  }
+
+  combined <- do.call(rbind, all_results)
+
+  if (nrow(combined) == 0) {
+    return(combined)
+  }
+
+  ranked <- aggregate(
+    similarity ~ molecule,
+    data = combined,
+    FUN = max
+  )
+
+  ranked <- ranked[order(-ranked$similarity), ]
+
+  return(ranked)
+}
+``
+
+```{r}
+search_molecule <- function(queries, reference, ppm = 20, index = NULL) {
+
+  all_results <- list()
+
+  for (i in seq_len(nrow(queries))) {
+
+    all_results[[i]] <- search_spectrum(
+      queries[i, ],
+      reference,
+      ppm,
+      index
+    )
+  }
+
+  combined <- do.call(rbind, all_results)
+
+  if (nrow(combined) == 0) {
+    return(combined)
+  }
+
+  ranked <- aggregate(
+    similarity ~ molecule,
+    data = combined,
+    FUN = max
+  )
+
+  ranked <- ranked[order(-ranked$similarity), ]
+
+  return(ranked)
+}
+```
+
+
+```{r}
+reciprocal_rank <- function(ranked, true_molecule) {
+
+  position <- match(true_molecule, ranked$molecule)
+
+  if (is.na(position)) {
+    return(0)
+  }
+
+  correct_score <- ranked$similarity[position]
+
+  # Count candidates with higher and equal scores
+  higher <- sum(ranked$similarity > correct_score)
+  tied <- sum(ranked$similarity == correct_score)
+
+  # Possible ranks if ties are broken randomly
+  ranks <- seq(higher + 1, higher + tied)
+
+  scores <- ifelse(ranks <= 25, 1 / ranks, 0)
+
+  return(mean(scores))
+}
+```
+
+
+```{r}
+reciprocal_rank(ranked, true_molecule)
+```
+
+```{r}
+covered_ids <- validation_ids[available]
+
+covered_ids
+```
+
+```{r}
+# Test the first 10 validation molecules
+#test_ids <- names(query_groups)[1:10]
+test_ids <- covered_ids
+
+rr <- numeric(length(test_ids))
+
+for (i in seq_along(test_ids)) {
+
+  id <- test_ids[i]
+
+  queries <- val_spectra[query_groups[[id]], ]
+
+  ranked_query <- search_molecule(
+    queries,
+    small_train
+  )
+
+  rr[i] <- reciprocal_rank(ranked_query, id)
+}
+
+data.frame(
+  molecule = test_ids,
+  reciprocal_rank = rr
+)
+
+mean(rr)
+```
+
+
+```{r}
+covered_ids <- validation_ids[available]
+
+covered_ids
+```
+
+``{r}
+evaluate_baseline <- function(reference, ppm = 20) {
+
+  ids <- names(query_groups)
+
+  rr <- numeric(length(ids))
+
+  for (i in seq_along(ids)) {
+
+    id <- ids[i]
+
+    queries <- val_spectra[query_groups[[id]], ]
+
+    ranked_query <- search_molecule(
+      queries,
+      reference,
+      ppm
+    )
+
+    rr[i] <- reciprocal_rank(ranked_query, id)
+
+  }
+
+  covered <- ids %in% reference$inchikey14
+
+  results <- data.frame(
+    molecule = ids,
+    covered = covered,
+    reciprocal_rank = rr
+  )
+
+  return(results)
+}
+``
+
+``{r}
+evaluate_baseline <- function(reference, ppm = 20, index = NULL) {
+
+  ids <- names(query_groups)
+
+  rr <- numeric(length(ids))
+
+  for (i in seq_along(ids)) {
+
+    id <- ids[i]
+
+    queries <- val_spectra[query_groups[[id]], ]
+
+    ranked_query <- search_molecule(
+      queries,
+      reference,
+      ppm,
+      index
+    )
+
+    rr[i] <- reciprocal_rank(ranked_query, id)
+  }
+
+  covered <- ids %in% reference$inchikey14
+
+  results <- data.frame(
+    molecule = ids,
+    covered = covered,
+    reciprocal_rank = rr
+  )
+
+  return(results)
+}
+``
+
+```{r}
+evaluate_baseline <- function(reference, ppm = 20, index = NULL) {
+
+  ids <- names(query_groups)
+
+  rr <- numeric(length(ids))
+
+  for (i in seq_along(ids)) {
+
+    id <- ids[i]
+
+    queries <- val_spectra[query_groups[[id]], ]
+
+    ranked_query <- search_molecule(
+      queries,
+      reference,
+      ppm,
+      index
+    )
+
+    rr[i] <- reciprocal_rank(ranked_query, id)
+  }
+
+  covered <- ids %in% reference$inchikey14
+
+  results <- data.frame(
+    molecule = ids,
+    covered = covered,
+    reciprocal_rank = rr
+  )
+
+  return(results)
+}
+```
+
+
+```{r}
+time_1 <- system.time({
+
+  results_1 <- evaluate_baseline(small_train)
+
+})
+
+time_1
+```
+
+```{r}
+# Overall MRR
+mean(results_1$reciprocal_rank)
+
+# Coverage
+mean(results_1$covered)
+
+# MRR conditional on coverage
+mean(results_1$reciprocal_rank[results_1$covered])
+
+# Search time in seconds
+time_1["elapsed"]
+```
+
+
+```{r}
+set.seed(42)
+
+bootstrap_mrr <- replicate(2000, {
+
+  sampled_rr <- sample(
+    results_1$reciprocal_rank,
+    replace = TRUE
+  )
+
+  mean(sampled_rr)
+
+})
+
+quantile(bootstrap_mrr, c(0.025, 0.975))
+```
+
+```{r}
+hist(
+  bootstrap_mrr,
+  breaks = 20,
+  main = "Bootstrap distribution of MRR: 1% subset",
+  xlab = "MRR@25",
+  col = "lightblue"
+)
+```
+
+
+```{r}
+get_reference <- function(fraction) {
+
+  ids <- molecules$inchikey14[
+    which(molecules$train_subset_rank < fraction)
+  ]
+
+  reference <- train |>
+    dplyr::filter(inchikey14 %in% ids) |>
+    dplyr::select(
+      row_id,
+      inchikey14,
+      precursor_mz,
+      adduct,
+      bins,
+      bin_intensities
+    ) |>
+    dplyr::collect()
+
+  return(reference)
+}
+```
+
+```{r}
+reference_5 <- get_reference(0.05)
+
+dim(reference_5)
+
+length(unique(reference_5$inchikey14))
+```
+
+
+```{r}
+time_5 <- system.time({
+
+  results_5 <- evaluate_baseline(reference_5)
+
+})
+
+mean(results_5$reciprocal_rank)
+
+mean(results_5$covered)
+
+mean(results_5$reciprocal_rank[results_5$covered])
+
+time_5["elapsed"]
+```
+
+```{r}
+scaling_results <- data.frame(
+
+  fraction = c(0.01, 0.05),
+
+  spectra = c(
+    nrow(small_train),
+    nrow(reference_5)
+  ),
+
+  coverage = c(
+    mean(results_1$covered),
+    mean(results_5$covered)
+  ),
+
+  MRR = c(
+    mean(results_1$reciprocal_rank),
+    mean(results_5$reciprocal_rank)
+  ),
+
+  conditional_MRR = c(
+    mean(results_1$reciprocal_rank[results_1$covered]),
+    mean(results_5$reciprocal_rank[results_5$covered])
+  ),
+
+  time_seconds = c(
+    time_1["elapsed"],
+    time_5["elapsed"]
+  ),
+
+  memory_MB = c(
+    as.numeric(object.size(small_train)) / 1024^2,
+    as.numeric(object.size(reference_5)) / 1024^2
+  )
+)
+
+print(scaling_results)
+```
+
+
+```{r}
+make_mass_index <- function(reference) {
+
+  # Group spectra into 1 Da mass buckets
+  mass_bin <- floor(reference$precursor_mz)
+
+  # Combine adduct and mass bucket
+  keys <- paste(reference$adduct, mass_bin)
+
+  # Store the row numbers belonging to each bucket
+  index <- split(seq_len(nrow(reference)), keys)
+
+  return(index)
+}
+```
+
+```{r}
+time_indexed_5 <- system.time({
+
+  index_5 <- make_mass_index(reference_5)
+
+  results_indexed_5 <- evaluate_baseline(
+    reference_5,
+    index = index_5
+  )
+
+})
+
+time_indexed_5
+```
+
+```{r}
+all.equal(
+  results_5$reciprocal_rank,
+  results_indexed_5$reciprocal_rank
+)
+```
+
+
+```{r}
+time_5["elapsed"] / time_indexed_5["elapsed"]
+```
+
+
+``{r}
+search_spectrum <- function(query, reference, ppm = 20) {
+```
+
+``{r}
+search_spectrum <- function(query, reference,
+                            ppm = 20, index = NULL) {
+```
+
+
+```{r}
+make_mass_index <- function(reference) {
+
+  mass_bin <- floor(reference$precursor_mz)
+
+  keys <- paste(reference$adduct, mass_bin)
+
+  index <- split(seq_len(nrow(reference)), keys)
+
+  return(index)
+}
+```
+
+```{r}
+# Time required to create the index
+time_build_5 <- system.time({
+  index_5 <- make_mass_index(reference_5)
+})
+
+# Time required to search
+time_indexed_5 <- system.time({
+
+  results_indexed_5 <- evaluate_baseline(
+    reference_5,
+    index = index_5
+  )
+
+})
+
+time_build_5
+time_indexed_5
+```
+
+
+```{r}
+all.equal(
+  results_5$reciprocal_rank,
+  results_indexed_5$reciprocal_rank
+)
+```
+
+
+```{r}
+time_5["elapsed"] / time_indexed_5["elapsed"]
+```
+
+
+
+
+
+```{r}
+reference_10 <- get_reference(0.10)
+
+dim(reference_10)
+```
+
+
+```{r}
+time_build_10 <- system.time({
+  index_10 <- make_mass_index(reference_10)
+})
+
+time_indexed_10 <- system.time({
+
+  results_10 <- evaluate_baseline(
+    reference_10,
+    index = index_10
+  )
+
+})
+
+time_build_10
+time_indexed_10
+```
+
+```{r}
+# Overall MRR
+mean(results_10$reciprocal_rank)
+
+# Reference-library coverage
+mean(results_10$covered)
+
+# Conditional MRR
+mean(results_10$reciprocal_rank[results_10$covered])
+
+# Memory used by reference library (MiB)
+as.numeric(object.size(reference_10)) / 1024^2
+```
+
+
+
+
+```{r}
+run_experiment <- function(reference, fraction) {
+
+  # Measure index construction time
+  build_time <- system.time({
+    index <- make_mass_index(reference)
+  })
+
+  # Measure search time
+  search_time <- system.time({
+    results <- evaluate_baseline(
+      reference,
+      index = index
+    )
+  })
+
+  # Calculate bootstrap confidence interval
+  set.seed(42)
+
+  boot <- replicate(2000, {
+    mean(sample(results$reciprocal_rank,
+                replace = TRUE))
+  })
+
+  ci <- quantile(boot, c(0.025, 0.975))
+
+  # Summarise the experiment
+  summary <- data.frame(
+    fraction = fraction,
+    spectra = nrow(reference),
+    molecules = length(unique(reference$inchikey14)),
+    coverage = mean(results$covered),
+    MRR = mean(results$reciprocal_rank),
+    conditional_MRR = mean(
+      results$reciprocal_rank[results$covered]
+    ),
+    CI_lower = as.numeric(ci[1]),
+    CI_upper = as.numeric(ci[2]),
+    build_seconds = as.numeric(build_time["elapsed"]),
+    search_seconds = as.numeric(search_time["elapsed"]),
+    memory_MB = as.numeric(object.size(reference)) / 1024^2,
+    index_MB = as.numeric(object.size(index)) / 1024^2
+  )
+
+  return(list(summary = summary, results = results))
+}
+```
+
+
+```{r}
+experiment_1 <- run_experiment(small_train, 0.01)
+
+experiment_5 <- run_experiment(reference_5, 0.05)
+
+experiment_10 <- run_experiment(reference_10, 0.10)
+```
+
+```{r}
+indexed_scaling <- rbind(
+  experiment_1$summary,
+  experiment_5$summary,
+  experiment_10$summary
+)
+
+indexed_scaling
+```
+
+
+```{r}
+reference_25 <- get_reference(0.25)
+
+dim(reference_25)
+```
+
+```{r}
+experiment_25 <- run_experiment(reference_25, 0.25)
+
+experiment_25$summary
+```
+
+```{r}
+indexed_scaling <- rbind(
+  indexed_scaling,
+  experiment_25$summary
+)
+
+indexed_scaling
+```
+
+
+```{r}
+write.csv(
+  indexed_scaling,
+  "indexed_scaling_results.csv",
+  row.names = FALSE
+)
+
+saveRDS(
+  experiment_25,
+  "baseline_experiment_25.rds"
+)
+```
+
+
+
+
+
+
+```{r}
+reference_50 <- get_reference(0.50)
+
+dim(reference_50)
+```
+
+```{r}
+experiment_50 <- run_experiment(reference_50, 0.50)
+
+experiment_50$summary
+```
+
+
+```{r}
+indexed_scaling <- rbind(
+  indexed_scaling,
+  experiment_50$summary
+)
+
+indexed_scaling
+```
+
+```{r}
+write.csv(
+  indexed_scaling,
+  "indexed_scaling_results.csv",
+  row.names = FALSE
+)
+
+saveRDS(
+  experiment_50,
+  "baseline_experiment_50.rds"
+)
+```
+
+
+```{r}
+linear_scaling <- lm(
+  search_seconds ~ spectra,
+  data = indexed_scaling
+)
+
+summary(linear_scaling)
+```
+
+
+```{r}
+power_scaling <- lm(
+  log(search_seconds) ~ log(spectra),
+  data = indexed_scaling
+)
+
+summary(power_scaling)
+```
+
+```{r}
+full_size <- data.frame(spectra = 2296272)
+
+prediction_linear <- predict(
+  linear_scaling,
+  newdata = full_size
+)
+
+prediction_power <- exp(
+  predict(
+    power_scaling,
+    newdata = full_size
+  )
+)
+
+prediction_linear
+prediction_power
+```
+
+
+```{r}
+N <- seq(
+  min(indexed_scaling$spectra),
+  2296272,
+  length.out = 100
+)
+
+plot(
+  indexed_scaling$spectra,
+  indexed_scaling$search_seconds,
+  pch = 19,
+  xlim = c(0, 2296272),
+  ylim = c(0, max(prediction_linear,
+                  prediction_power,
+                  indexed_scaling$search_seconds) * 1.1),
+  xlab = "Number of reference spectra",
+  ylab = "Search time (seconds)",
+  main = "Predicting computational scaling"
+)
+
+lines(
+  N,
+  predict(linear_scaling,
+          newdata = data.frame(spectra = N)),
+  col = "blue"
+)
+
+lines(
+  N,
+  exp(predict(power_scaling,
+              newdata = data.frame(spectra = N))),
+  col = "red"
+)
+
+legend(
+  "topleft",
+  legend = c("Observed", "Linear", "Power law"),
+  col = c("black", "blue", "red"),
+  pch = c(19, NA, NA),
+  lty = c(NA, 1, 1)
+)
+```
+
+```{r}
+indexed_scaling[, c(
+  "fraction",
+  "memory_MB",
+  "index_MB"
+)]
+```
+
+
+
+
+
+
+```{r}
+saveRDS(
+  list(
+    scaling = indexed_scaling,
+    linear = linear_scaling,
+    power = power_scaling,
+    prediction_linear = prediction_linear,
+    prediction_power = prediction_power,
+    experiments = list(
+      experiment_1,
+      experiment_5,
+      experiment_10,
+      experiment_25,
+      experiment_50
+    )
+  ),
+  "baseline_partial_results.rds"
+)
+```
+
+
+```{r}
+rm(
+  small_train,
+  reference_5,
+  reference_10,
+  reference_25,
+  reference_50
+)
+
+gc()
+```
+
+```{r}
+reference_100 <- get_reference(1)
+
+dim(reference_100)
+
+as.numeric(object.size(reference_100)) / 1024^2
+```
+
+
+```{r}
+experiment_100 <- run_experiment(reference_100, 1)
+
+experiment_100$summary
+```
+
+```{r}
+indexed_scaling <- rbind(
+  indexed_scaling[indexed_scaling$fraction < 1, ],
+  experiment_100$summary
+)
+
+indexed_scaling
+
+write.csv(
+  indexed_scaling,
+  "indexed_scaling_results.csv",
+  row.names = FALSE
+)
+
+saveRDS(
+  experiment_100,
+  "baseline_experiment_100.rds"
+)
+```
+
+```{r}
+actual_time <- experiment_100$summary$search_seconds
+
+comparison <- data.frame(
+  model = c("Linear", "Power law"),
+
+  predicted = c(
+    as.numeric(prediction_linear),
+    as.numeric(prediction_power)
+  ),
+
+  actual = actual_time
+)
+
+comparison$absolute_error <- abs(
+  comparison$predicted - comparison$actual
+)
+
+comparison$percentage_error <- 
+  100 * comparison$absolute_error / comparison$actual
+
+comparison
+```
+
+
+
+
+
+```{r}
+plot(
+  indexed_scaling$fraction * 100,
+  indexed_scaling$coverage,
+  type = "b",
+  pch = 19,
+  col = "grey40",
+  lty = 2,
+  ylim = c(0, 1),
+  xlab = "Percentage of reference library",
+  ylab = "MRR / Coverage",
+  main = "Identification performance and library size"
+)
+
+lines(
+  indexed_scaling$fraction * 100,
+  indexed_scaling$MRR,
+  type = "b",
+  pch = 19,
+  col = "blue"
+)
+
+# Bootstrap confidence intervals
+arrows(
+  indexed_scaling$fraction * 100,
+  indexed_scaling$CI_lower,
+  indexed_scaling$fraction * 100,
+  indexed_scaling$CI_upper,
+  angle = 90,
+  code = 3,
+  length = 0.05,
+  col = "blue"
+)
+
+legend(
+  "topleft",
+  legend = c("Library coverage", "MRR@25"),
+  col = c("grey40", "blue"),
+  lty = c(2, 1),
+  pch = 19
+)
+```
+
+```{r}
+plot(
+  indexed_scaling$fraction * 100,
+  indexed_scaling$conditional_MRR,
+  type = "b",
+  pch = 19,
+  ylim = c(0, 1),
+  xlab = "Percentage of reference library",
+  ylab = "Conditional MRR@25",
+  main = "Matching performance given coverage",
+  col = "blue"
+)
+```
+
+
+
+```{r}
+plot(
+  indexed_scaling$spectra,
+  indexed_scaling$search_seconds,
+  type = "b",
+  pch = 19,
+  xlab = "Number of reference spectra",
+  ylab = "Search time (seconds)",
+  main = "Computational scaling of indexed search"
+)
+
+# Original linear model fitted without the full dataset
+abline(linear_scaling, col = "blue", lty = 2)
+
+# Original power-law model
+N <- seq(
+  min(indexed_scaling$spectra),
+  max(indexed_scaling$spectra),
+  length.out = 100
+)
+
+lines(
+  N,
+  exp(predict(power_scaling,
+              newdata = data.frame(spectra = N))),
+  col = "red",
+  lty = 2
+)
+
+legend(
+  "topleft",
+  legend = c("Observed", "Linear prediction",
+             "Power-law prediction"),
+  col = c("black", "blue", "red"),
+  lty = c(1, 2, 2)
+)
+```
+
+```{r}
+scale_factor <- 1000
+
+full <- experiment_100$summary
+
+projection <- data.frame(
+  spectra = full$spectra * scale_factor,
+
+  search_hours = full$search_seconds *
+    scale_factor / 3600,
+
+  build_minutes = full$build_seconds *
+    scale_factor / 60,
+
+  reference_GiB = full$memory_MB *
+    scale_factor / 1024,
+
+  index_GiB = full$index_MB *
+    scale_factor / 1024
+)
+
+projection
+```
+
+
+
+
+```{r}
+# Molecules covered by the 50% reference library
+covered_50 <- experiment_50$results$molecule[
+  experiment_50$results$covered
+]
+
+# Reciprocal ranks at 50%
+rr_50 <- experiment_50$results$reciprocal_rank[
+  match(covered_50, experiment_50$results$molecule)
+]
+
+# Reciprocal ranks for the same molecules at 100%
+rr_100 <- experiment_100$results$reciprocal_rank[
+  match(covered_50, experiment_100$results$molecule)
+]
+
+mean(rr_50)
+mean(rr_100)
+```
+
+
+```{r}
+difference <- rr_100 - rr_50
+
+# Number of molecules whose rankings improved
+sum(difference > 0)
+
+# Number whose rankings stayed the same
+sum(difference == 0)
+
+# Number whose rankings worsened
+sum(difference < 0)
+
+# Average change in reciprocal rank
+mean(difference)
+```
+
+
+```{r}
+plot(
+  rr_50,
+  rr_100,
+  xlim = c(0, 1),
+  ylim = c(0, 1),
+  pch = 19,
+  col = rgb(0, 0, 1, 0.2),
+  xlab = "Reciprocal rank at 50%",
+  ylab = "Reciprocal rank at 100%",
+  main = "Effect of increasing the reference library"
+)
+
+abline(a = 0, b = 1, col = "red", lty = 2)
+```
+
+```{r}
+compare_search <- function(fraction, repeats = 3) {
+
+  reference <- get_reference(fraction)
+  index <- make_mass_index(reference)
+
+  ordinary_times <- numeric(repeats)
+  indexed_times <- numeric(repeats)
+  same_results <- logical(repeats)
+
+  for (i in seq_len(repeats)) {
+
+    ordinary_times[i] <- system.time({
+      ordinary <- evaluate_baseline(reference)
+    })["elapsed"]
+
+    indexed_times[i] <- system.time({
+      indexed <- evaluate_baseline(
+        reference,
+        index = index
+      )
+    })["elapsed"]
+
+    same_results[i] <- isTRUE(all.equal(
+      ordinary$reciprocal_rank,
+      indexed$reciprocal_rank
+    ))
+  }
+
+  data.frame(
+    fraction = fraction,
+    spectra = nrow(reference),
+    ordinary_seconds = median(ordinary_times),
+    indexed_seconds = median(indexed_times),
+    speedup = median(ordinary_times) /
+              median(indexed_times),
+    identical_results = all(same_results)
+  )
+}
+```
+
+
+```{r}
+comparison_1 <- compare_search(0.01)
+
+comparison_5 <- compare_search(0.05)
+
+comparison_10 <- compare_search(0.10)
+
+search_comparison <- rbind(
+  comparison_1,
+  comparison_5,
+  comparison_10
+)
+
+search_comparison
+```
+
+```{r}
+plot(
+  search_comparison$spectra,
+  search_comparison$ordinary_seconds,
+  type = "b",
+  pch = 19,
+  col = "red",
+  ylim = c(0, max(search_comparison$ordinary_seconds)),
+  xlab = "Number of reference spectra",
+  ylab = "Median search time (seconds)",
+  main = "Ordinary versus indexed search"
+)
+
+lines(
+  search_comparison$spectra,
+  search_comparison$indexed_seconds,
+  type = "b",
+  pch = 19,
+  col = "blue"
+)
+
+legend(
+  "topleft",
+  legend = c("Ordinary search", "Indexed search"),
+  col = c("red", "blue"),
+  lty = 1,
+  pch = 19
+)
+```
+
+
+```{r}
+write.csv(
+  search_comparison,
+  "baseline_search_comparison.csv",
+  row.names = FALSE
+)
+```
+
+
+```{r}
+paired_results <- data.frame(
+  molecule = covered_50,
+  RR_50 = rr_50,
+  RR_100 = rr_100,
+  difference = difference
+)
+
+write.csv(
+  paired_results,
+  "baseline_paired_results.csv",
+  row.names = FALSE
+)
+```
+
+```{r}
+set.seed(42)
+
+boot_difference <- replicate(2000, {
+  mean(sample(difference, replace = TRUE))
+})
+
+quantile(boot_difference, c(0.025, 0.975))
+```
+
+
+```{r}
+experiments <- list(
+  experiment_1,
+  experiment_5,
+  experiment_10,
+  experiment_25,
+  experiment_50,
+  experiment_100
+)
+
+all_molecule_results <- data.frame()
+
+for (i in seq_along(experiments)) {
+
+  temp <- experiments[[i]]$results
+
+  temp$fraction <- experiments[[i]]$summary$fraction
+
+  all_molecule_results <- rbind(
+    all_molecule_results,
+    temp
+  )
+}
+
+write.csv(
+  all_molecule_results,
+  "baseline_molecule_results.csv",
+  row.names = FALSE
+)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r, 5%}
+
+base_dir <- "C:/masters/Data Science Toolbox/sprint2/baseline_submission"
+
+split5_dir <- file.path(base_dir, "stage_1_5pct")
+
+shared_cols <- c(
+  "row_id",
+  "source_part",
+  "inchikey14",
+  "precursor_mz",
+  "adduct",
+  "bins",
+  "bin_intensities"
+)
+
+shared_train <- read_parquet(
+  file.path(split5_dir, "train.parquet"),
+  col_select = tidyselect::all_of(shared_cols)
+)
+
+shared_val <- read_parquet(
+  file.path(split5_dir, "validation.parquet"),
+  col_select = tidyselect::all_of(shared_cols)
+)
+
+dim(shared_train)
+dim(shared_val)
+```
+
+
+```{r}
+# Check for duplicated spectrum identifiers
+anyDuplicated(shared_train$row_id)
+anyDuplicated(shared_val$row_id)
+
+# Check for overlap between training and validation
+length(intersect(
+  shared_train$row_id,
+  shared_val$row_id
+))
+
+# Identify validation spectra belonging to known molecules
+known_5 <- shared_val$inchikey14 %in%
+  shared_train$inchikey14
+
+table(known_5)
+
+mean(known_5)
+```
+
+
+```{r}
+evaluate_shared <- function(reference, validation,
+                            ppm = 20) {
+
+  # Identify molecules represented in the reference library
+  known <- validation$inchikey14 %in%
+    reference$inchikey14
+
+  # Create and time the mass index
+  build_time <- system.time({
+    index <- make_mass_index(reference)
+  })
+
+  # Store the results for each validation spectrum
+  n <- nrow(validation)
+
+  top1 <- numeric(n)
+  top5 <- numeric(n)
+  top25 <- numeric(n)
+  rr <- numeric(n)
+  rr_ties <- numeric(n)
+
+  n_candidates <- integer(n)
+  correct_candidate <- logical(n)
+  predictions <- character(n)
+
+  # Search for each validation spectrum separately
+  search_time <- system.time({
+
+    for (i in seq_len(n)) {
+
+      query <- validation[i, ]
+
+      if (!is.finite(query$precursor_mz[1]) ||
+          is.na(query$adduct[1])) {
+        next
+      }
+
+      ranked <- search_spectrum(
+        query,
+        reference,
+        ppm = ppm,
+        index = index
+      )
+
+      # Use molecule identifiers to break similarity ties
+      ranked <- ranked[
+        order(-ranked$similarity,
+              ranked$molecule,
+              method = "radix"),
+      ]
+
+      true_molecule <- validation$inchikey14[i]
+
+      position <- match(
+        true_molecule,
+        ranked$molecule
+      )
+
+      n_candidates[i] <- nrow(ranked)
+
+      predictions[i] <- paste(
+        head(ranked$molecule, 25),
+        collapse = ";"
+      )
+
+      # Check whether the correct molecule was a candidate
+      correct_candidate[i] <- !is.na(position)
+
+      if (!is.na(position)) {
+
+        top1[i] <- as.numeric(position <= 1)
+        top5[i] <- as.numeric(position <= 5)
+        top25[i] <- as.numeric(position <= 25)
+
+        if (position <= 25) {
+          rr[i] <- 1 / position
+        }
+
+        rr_ties[i] <- reciprocal_rank(
+          ranked,
+          true_molecule
+        )
+      }
+    }
+  })
+
+  results <- data.frame(
+    row_id = validation$row_id,
+    source_part = validation$source_part,
+    molecule = validation$inchikey14,
+    known = known,
+    n_candidates = n_candidates,
+    correct_candidate = correct_candidate,
+    predicted_top25 = predictions,
+    top1 = top1,
+    top5 = top5,
+    top25 = top25,
+    MRR = rr,
+    MRR_ties = rr_ties
+  )
+
+  return(list(
+    results = results,
+    reference_spectra = nrow(reference),
+    reference_molecules = length(
+      unique(reference$inchikey14)
+    ),
+    build_seconds = as.numeric(build_time["elapsed"]),
+    search_seconds = as.numeric(search_time["elapsed"])
+  ))
+}
+```
+
+```{r}
+summarise_shared <- function(experiment, keep, population) {
+
+  results <- experiment$results[keep, ]
+
+  data.frame(
+    population = population,
+    n = nrow(results),
+    coverage = mean(results$known),
+
+    candidate_coverage = mean(
+      results$correct_candidate
+    ),
+
+    top1 = mean(results$top1),
+    top5 = mean(results$top5),
+    top25 = mean(results$top25),
+    MRR = mean(results$MRR),
+    MRR_ties = mean(results$MRR_ties),
+
+    reference_spectra = experiment$reference_spectra,
+    reference_molecules = experiment$reference_molecules,
+
+    index_seconds = experiment$build_seconds,
+    search_seconds_all = experiment$search_seconds
+  )
+}
+```
+
+
+```{r}
+shared_experiment_5 <- evaluate_shared(
+  shared_train,
+  shared_val
+)
+
+shared_summary_5 <- rbind(
+
+  summarise_shared(
+    shared_experiment_5,
+    rep(TRUE, nrow(shared_val)),
+    "All validation"
+  ),
+
+  summarise_shared(
+    shared_experiment_5,
+    known_5,
+    "Known molecules"
+  )
+)
+
+shared_summary_5
+```
+
+
+
+```{r, 9%}
+split9_dir <- file.path(base_dir, "stage_2_9pct")
+
+shared_train_9 <- read_parquet(
+  file.path(split9_dir, "train.parquet"),
+  col_select = tidyselect::all_of(shared_cols)
+)
+
+shared_val_9 <- read_parquet(
+  file.path(split9_dir, "validation.parquet"),
+  col_select = tidyselect::all_of(shared_cols)
+)
+
+dim(shared_train_9)
+dim(shared_val_9)
+```
+
+```{r}
+stopifnot(
+  nrow(shared_train_9) == 179108,
+  nrow(shared_val_9) == 22963,
+
+  !anyNA(shared_train_9$row_id),
+  !anyNA(shared_val_9$row_id),
+
+  !anyNA(shared_train_9$inchikey14),
+  !anyNA(shared_val_9$inchikey14),
+
+  anyDuplicated(shared_train_9$row_id) == 0,
+  anyDuplicated(shared_val_9$row_id) == 0,
+
+  length(intersect(
+    shared_train_9$row_id,
+    shared_val_9$row_id
+  )) == 0,
+
+  all(shared_train$row_id %in%
+        shared_train_9$row_id),
+
+  setequal(
+    shared_val$row_id,
+    shared_val_9$row_id
+  )
+)
+```
+
+```{r}
+shared_val_9 <- shared_val_9[
+  match(shared_val$row_id, shared_val_9$row_id),
+]
+
+stopifnot(
+  all(shared_val$row_id == shared_val_9$row_id),
+
+  all(shared_val$inchikey14 ==
+        shared_val_9$inchikey14)
+)
+
+train_match_9 <- match(
+  shared_train$row_id,
+  shared_train_9$row_id
+)
+
+stopifnot(
+  all(shared_train$inchikey14 ==
+        shared_train_9$inchikey14[train_match_9])
+)
+```
+
+
+```{r}
+known_9 <- shared_val_9$inchikey14 %in%
+  shared_train_9$inchikey14
+
+table(known_9)
+
+mean(known_9)
+
+# Number of newly covered validation spectra
+sum(known_9 & !known_5)
+
+# Check that all previously known molecules remain known
+all(known_9[known_5])
+```
+
+```{r}
+shared_experiment_9 <- evaluate_shared(
+  shared_train_9,
+  shared_val_9
+)
+
+shared_summary_9 <- rbind(
+
+  summarise_shared(
+    shared_experiment_9,
+    rep(TRUE, nrow(shared_val_9)),
+    "All validation"
+  ),
+
+  summarise_shared(
+    shared_experiment_9,
+    known_9,
+    "Known molecules at 9%"
+  ),
+
+  summarise_shared(
+    shared_experiment_9,
+    known_5,
+    "Fixed 5% known molecules"
+  )
+)
+
+shared_summary_9
+```
+
+```{r}
+results_5 <- shared_experiment_5$results
+results_9 <- shared_experiment_9$results
+
+# Confirm the results are aligned
+stopifnot(
+  all(results_5$row_id == results_9$row_id)
+)
+
+metrics <- c(
+  "top1", "top5", "top25",
+  "MRR", "MRR_ties"
+)
+
+paired_5_9 <- data.frame(
+  metric = metrics,
+
+  at_5pct = colMeans(
+    results_5[known_5, metrics]
+  ),
+
+  at_9pct = colMeans(
+    results_9[known_5, metrics]
+  ),
+
+  row.names = NULL
+)
+
+paired_5_9$change <-
+  paired_5_9$at_9pct -
+  paired_5_9$at_5pct
+
+paired_5_9
+```
+
+```{r}
+correct_5 <- results_5$top1[known_5]
+correct_9 <- results_9$top1[known_5]
+
+# Incorrect at 5%, correct at 9%
+sum(correct_5 == 0 & correct_9 == 1)
+
+# Correct at 5%, incorrect at 9%
+sum(correct_5 == 1 & correct_9 == 0)
+
+# Unchanged
+sum(correct_5 == correct_9)
+
+# Change in top-1 accuracy
+mean(correct_9 - correct_5)
+```
+
+```{r}
+model_comparison <- data.frame(
+
+  model = c(
+    "Classical cosine",
+    "Fine-tuned DreaMS",
+    "MS2DeepScore"
+  ),
+
+  accuracy_5 = c(
+    mean(correct_5),
+    0.4061853639,
+    0.3635378706
+  ),
+
+  accuracy_9 = c(
+    mean(correct_9),
+    0.5003447257,
+    0.4230276765
+  )
+)
+
+model_comparison$change <-
+  model_comparison$accuracy_9 -
+  model_comparison$accuracy_5
+
+model_comparison
+```
+
+```{r}
+accuracy_matrix <- t(
+  as.matrix(
+    model_comparison[, c(
+      "accuracy_5",
+      "accuracy_9"
+    )]
+  )
+)
+
+barplot(
+  accuracy_matrix * 100,
+  beside = TRUE,
+  names.arg = model_comparison$model,
+  col = c("lightblue", "steelblue"),
+  ylim = c(0, 100),
+  ylab = "Top-1 accuracy (%)",
+  main = "Identification performance on shared spectra",
+  legend.text = c("5%", "9%"),
+  args.legend = list(x = "topright")
+)
+```
+
+```{r}
+output_dir <- file.path(
+  base_dir,
+  "results"
+)
+
+dir.create(
+  output_dir,
+  showWarnings = FALSE
+)
+
+write.csv(
+  shared_summary_5,
+  file.path(output_dir, "shared_5pct_summary.csv"),
+  row.names = FALSE
+)
+
+write.csv(
+  shared_summary_9,
+  file.path(output_dir, "shared_9pct_summary.csv"),
+  row.names = FALSE
+)
+
+write.csv(
+  results_5,
+  file.path(output_dir, "shared_5pct_predictions.csv"),
+  row.names = FALSE
+)
+
+write.csv(
+  results_9,
+  file.path(output_dir, "shared_9pct_predictions.csv"),
+  row.names = FALSE
+)
+
+write.csv(
+  paired_5_9,
+  file.path(output_dir, "shared_5_vs_9_fixed.csv"),
+  row.names = FALSE
+)
+
+write.csv(
+  model_comparison,
+  file.path(output_dir, "shared_model_comparison.csv"),
+  row.names = FALSE
+)
+```
+
+
+
+
+
+
+
+
+```{r}
+full_metadata <- train |>
+  select(row_id, inchikey14) |>
+  collect()
+
+nrow(full_metadata)
+
+anyDuplicated(full_metadata$row_id)
+
+sum(shared_val$row_id %in%
+      full_metadata$row_id)
+
+sum(shared_train_9$row_id %in%
+      full_metadata$row_id)
+```
+
+```{r}
+val_match <- match(
+  shared_val$row_id,
+  full_metadata$row_id
+)
+
+train_match_9 <- match(
+  shared_train_9$row_id,
+  full_metadata$row_id
+)
+
+stopifnot(
+  !anyNA(val_match),
+  !anyNA(train_match_9),
+
+  all(shared_val$inchikey14 ==
+        full_metadata$inchikey14[val_match]),
+
+  all(shared_train_9$inchikey14 ==
+        full_metadata$inchikey14[train_match_9])
+)
+```
+
+```{r}
+validation_ids <- shared_val$row_id
+
+load_time_100 <- system.time({
+
+  shared_train_100 <- train |>
+    filter(!(row_id %in% validation_ids)) |>
+    select(
+      row_id,
+      inchikey14,
+      precursor_mz,
+      adduct,
+      bins,
+      bin_intensities
+    ) |>
+    collect()
+
+})
+
+dim(shared_train_100)
+
+load_time_100
+
+as.numeric(object.size(shared_train_100)) / 1024^2
+```
+
+```{r}
+stopifnot(
+  nrow(shared_train_100) == 2273309,
+
+  anyDuplicated(shared_train_100$row_id) == 0,
+
+  length(intersect(
+    shared_train_100$row_id,
+    shared_val$row_id
+  )) == 0,
+
+  all(shared_train_9$row_id %in%
+        shared_train_100$row_id)
+)
+
+print("Full reference library passed integrity checks")
+```
+
+
+
+
+
+```{r}
+known_100 <- shared_val$inchikey14 %in%
+  shared_train_100$inchikey14
+
+table(known_100)
+
+mean(known_100)
+
+sum(known_100 & !known_9)
+
+all(known_100[known_9])
+```
+
+```{r}
+shared_experiment_100 <- evaluate_shared(
+  shared_train_100,
+  shared_val
+)
+```
+
+```{r}
+known_100 <- shared_val$inchikey14 %in%
+  shared_train_100$inchikey14
+
+table(known_100)
+
+mean(known_100)
+
+sum(known_100 & !known_9)
+
+all(known_100[known_9])
+```
+
+```{r}
+shared_experiment_100 <- evaluate_shared(
+  shared_train_100,
+  shared_val
+)
+```
+
+```{r}
+shared_summary_100 <- rbind(
+
+  summarise_shared(
+    shared_experiment_100,
+    rep(TRUE, nrow(shared_val)),
+    "All validation"
+  ),
+
+  summarise_shared(
+    shared_experiment_100,
+    known_100,
+    "Known molecules at 100%"
+  ),
+
+  summarise_shared(
+    shared_experiment_100,
+    known_5,
+    "Fixed 5% known molecules"
+  )
+)
+
+shared_summary_100
+```
+
+```{r}
+shared_scaling <- rbind(
+
+  shared_summary_5[2, ],
+
+  shared_summary_9[3, ],
+
+  shared_summary_100[3, ]
+)
+
+shared_scaling$fraction <- c(0.05, 0.09, 1)
+
+shared_scaling[, c(
+  "fraction",
+  "reference_spectra",
+  "n",
+  "candidate_coverage",
+  "top1",
+  "top5",
+  "top25",
+  "MRR_ties",
+  "index_seconds",
+  "search_seconds_all"
+)]
+```
+
+```{r}
+shared_scaling$conditional_top1 <-
+  shared_scaling$top1 /
+  shared_scaling$candidate_coverage
+
+shared_scaling$conditional_MRR <-
+  shared_scaling$MRR_ties /
+  shared_scaling$candidate_coverage
+
+shared_scaling[, c(
+  "fraction",
+  "candidate_coverage",
+  "top1",
+  "conditional_top1",
+  "MRR_ties",
+  "conditional_MRR"
+)]
+```
+
+```{r}
+plot(
+  shared_scaling$fraction * 100,
+  shared_scaling$candidate_coverage,
+  type = "b",
+  pch = 19,
+  col = "black",
+  ylim = c(0, 1),
+  xlab = "Dataset split (%)",
+  ylab = "Proportion",
+  main = "Candidate coverage and identification performance"
+)
+
+lines(
+  shared_scaling$fraction * 100,
+  shared_scaling$top1,
+  type = "b",
+  pch = 19,
+  col = "steelblue"
+)
+
+lines(
+  shared_scaling$fraction * 100,
+  shared_scaling$conditional_top1,
+  type = "b",
+  pch = 19,
+  col = "darkgreen"
+)
+
+legend(
+  "bottomright",
+  legend = c(
+    "Candidate coverage",
+    "Top-1 accuracy",
+    "Conditional top-1 accuracy"
+  ),
+  col = c("black", "steelblue", "darkgreen"),
+  lty = 1,
+  pch = 19
+)
+```
+
+```{r}
+write.csv(
+  shared_summary_100,
+  file.path(output_dir, "shared_100pct_summary.csv"),
+  row.names = FALSE
+)
+
+write.csv(
+  shared_experiment_100$results,
+  file.path(output_dir, "shared_100pct_predictions.csv"),
+  row.names = FALSE
+)
+
+write.csv(
+  shared_scaling,
+  file.path(output_dir, "shared_scaling.csv"),
+  row.names = FALSE
+)
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
