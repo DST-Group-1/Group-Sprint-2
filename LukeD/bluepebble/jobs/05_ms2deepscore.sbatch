@@ -19,7 +19,7 @@ mkdir -p "$out"
 run_nb "$MS2DS_NOTEBOOK" MS2DEEPSCORE-bluepebble-100pct \
     "MODE='100pct'" \
     "DATA_DIR=Path('$SPLITS_DIR/stage_1_5pct')" \
-    "FULL_GLOB=r'$DERIVED_DIR/spectra_train/*.parquet'" \
+    "FULL_GLOB=r'$SPLITS_DIR/stage_3_100pct/train.parquet'" \
     "MODEL_FILE=Path('$MODELS_DIR/ms2deepscore_model.pt')" \
     "OUTPUT_DIR=Path('$out')"
 
