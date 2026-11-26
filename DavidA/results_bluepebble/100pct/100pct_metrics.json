@@ -1,0 +1,19 @@
+{
+  "mode": "100pct",
+  "reference_spectra": 2273309,
+  "reference_molecules": 271040,
+  "validation_spectra_evaluated": 10029,
+  "reference_coverage": 1.0,
+  "embedding_seconds_reference": 3238.9885855950415,
+  "embedding_seconds_validation": 11.471940888091922,
+  "search_seconds": 19.290895137935877,
+  "peak_pytorch_cuda_memory_gib": 8.873865127563477,
+  "checkpoint": "/user/work/zy26641/casmi26/models/ms2deepscore_model.pt",
+  "model_retrained": false,
+  "top1": 0.7503240602253465,
+  "top5": 0.8574421388667198,
+  "top25": 0.9098262432594368,
+  "eligible_top1": 10029,
+  "eligible_top5": 10024,
+  "eligible_top25": 10014
+}

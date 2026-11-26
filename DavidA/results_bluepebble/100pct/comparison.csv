@@ -1,0 +1,2 @@
+mode,reference_spectra,reference_molecules,validation_spectra_evaluated,reference_coverage,embedding_seconds_reference,embedding_seconds_validation,search_seconds,peak_pytorch_cuda_memory_gib,checkpoint,model_retrained,top1,top5,top25,eligible_top1,eligible_top5,eligible_top25
+100pct,2273309,271040,10029,1.0,3238.9885855950415,11.471940888091922,19.290895137935877,8.873865127563477,/user/work/zy26641/casmi26/models/ms2deepscore_model.pt,False,0.7503240602253465,0.8574421388667198,0.9098262432594368,10029,10024,10014

@@ -1,0 +1,15 @@
+{
+  "count": 2273309,
+  "read": 2296272,
+  "skipped_invalid": 0,
+  "excluded_validation": true,
+  "excluded_count": 22963,
+  "dimension": 500,
+  "embedding_seconds": 3238.9885855950415,
+  "checkpoint_path": "/user/work/zy26641/casmi26/models/ms2deepscore_model.pt",
+  "source_files": [
+    "/user/work/zy26641/casmi26/Group-Sprint-2/model_datasets/stage_3_100pct/train.parquet",
+    "/user/work/zy26641/casmi26/Group-Sprint-2/model_datasets/stage_3_100pct/validation.parquet"
+  ],
+  "max_rows": null
+}
