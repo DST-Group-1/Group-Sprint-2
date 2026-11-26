@@ -1,0 +1,146 @@
+{
+  "key": "c16678b5b2",
+  "split": "stage_3_100pct",
+  "config": {
+    "fraction": 0.05,
+    "part": -1,
+    "instruments": "all",
+    "min_spectra": 0,
+    "one_per_molecule": false,
+    "drop_dimers": false,
+    "bin_width": 0.1,
+    "intensity": "log",
+    "neutral_losses": false,
+    "metadata": true,
+    "top_peaks": 0,
+    "width": 2048,
+    "depth": 5,
+    "dropout": 0.2,
+    "loss": "wbce",
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "batch_size": 512,
+    "max_epochs": 30,
+    "patience": 4,
+    "sparse_grad": false,
+    "seed": 0
+  },
+  "scoring": {
+    "all": "cosine",
+    "window": "cosine"
+  },
+  "train": {
+    "spectra": 2266986,
+    "molecules": 270016,
+    "epochs": 17,
+    "best_epoch": 15,
+    "seconds": 1231.2690882086754,
+    "seconds_per_epoch": 72.42759342403973,
+    "seconds_to_best": 1086.4340053163469,
+    "feature_share": 0.7696949703436736,
+    "spectra_per_second": 31300.03211245116,
+    "params": 51830784,
+    "dense_params": 21057536,
+    "inputs_per_spectrum": 30.540475768266766,
+    "train_flops": 4883651088519168.0,
+    "peak_rss_mb": 7898.267648,
+    "peak_gpu_mb": 6576.44288
+  },
+  "dev_scoring": [
+    {
+      "candidates": "all",
+      "scoring": "tanimoto",
+      "dev MRR@25": 0.12370146318275786
+    },
+    {
+      "candidates": "all",
+      "scoring": "cosine",
+      "dev MRR@25": 0.13293986275410913
+    },
+    {
+      "candidates": "all",
+      "scoring": "loglik",
+      "dev MRR@25": 0.10903718960297597
+    },
+    {
+      "candidates": "window",
+      "scoring": "tanimoto",
+      "dev MRR@25": 0.6755149882095459
+    },
+    {
+      "candidates": "window",
+      "scoring": "cosine",
+      "dev MRR@25": 0.6831734111463122
+    },
+    {
+      "candidates": "window",
+      "scoring": "loglik",
+      "dev MRR@25": 0.6693642471104901
+    }
+  ],
+  "settings": [
+    {
+      "setting": "known molecules, all training molecules",
+      "scoring": "cosine",
+      "spectra": 22780,
+      "molecules": 19881,
+      "top-1": 0.3332588284620556,
+      "top-5": 0.4963599323984554,
+      "MRR@25": 0.40794581251984974,
+      "hit@25": 0.6209660025673417,
+      "balanced accuracy": 0.29083225897125364,
+      "macro F1": 0.279953354559285,
+      "answer among candidates": 1.0,
+      "median candidates": 271040.0,
+      "ceiling top-1": 0.9723950469072762
+    },
+    {
+      "setting": "known molecules, training molecules within \u00b110 ppm",
+      "scoring": "cosine",
+      "spectra": 22780,
+      "molecules": 19881,
+      "top-1": 0.6617549349002378,
+      "top-5": 0.8327050227598956,
+      "MRR@25": 0.7389257755656722,
+      "hit@25": 0.9067603160667252,
+      "balanced accuracy": 0.6511342959585,
+      "macro F1": 0.6469546684924974,
+      "answer among candidates": 0.9637401229148376,
+      "median candidates": 43.0,
+      "ceiling top-1": 0.9559735999782092
+    },
+    {
+      "setting": "unseen molecules, training + validation molecules",
+      "scoring": "cosine",
+      "spectra": 183,
+      "molecules": 181,
+      "top-1": 0.03109083903605404,
+      "top-5": 0.10030875853091341,
+      "MRR@25": 0.0707717464081568,
+      "hit@25": 0.2805955193419992,
+      "balanced accuracy": 0.03131427852576303,
+      "macro F1": 0.03867403314917127,
+      "answer among candidates": 1.0,
+      "median candidates": 271221.0,
+      "ceiling top-1": 0.7576037873734145
+    },
+    {
+      "setting": "unseen molecules, training + validation molecules within \u00b110 ppm",
+      "scoring": "cosine",
+      "spectra": 183,
+      "molecules": 181,
+      "top-1": 0.48119307832422586,
+      "top-5": 0.8115209471766849,
+      "MRR@25": 0.6262207722230625,
+      "hit@25": 0.9016393442622951,
+      "balanced accuracy": 0.47822283609576427,
+      "macro F1": 0.47513812154696133,
+      "answer among candidates": 0.9289617486338798,
+      "median candidates": 8.0,
+      "ceiling top-1": 0.8529599271402548
+    }
+  ],
+  "device": "NVIDIA GeForce RTX 2080 Ti",
+  "torch": "2.15.0+cu132",
+  "created_utc": "2026-11-25T22:56:21Z"
+}
