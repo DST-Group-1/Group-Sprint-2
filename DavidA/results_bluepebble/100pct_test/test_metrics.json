@@ -1,0 +1,124 @@
+{
+  "experiment": "Pretrained MS2DeepScore, 100% training split as the reference library, on the held-out test set, scored once",
+  "model": "/user/work/zy26641/casmi26/models/ms2deepscore_model.pt",
+  "reference": {
+    "count": 2273309,
+    "source_files": [
+      "/user/work/zy26641/casmi26/Group-Sprint-2/model_datasets/stage_3_100pct/train.parquet",
+      "/user/work/zy26641/casmi26/Group-Sprint-2/model_datasets/stage_3_100pct/validation.parquet"
+    ],
+    "excluded_count": 22963
+  },
+  "test_set": "/user/work/zy26641/casmi26/Group-Sprint-2/model_datasets/test_heldout",
+  "model_retrained": false,
+  "notes": {
+    "closed_set": "a molecule with no reference spectra cannot be found; such test molecules are misses",
+    "rank": "rank of the true molecule among the first 25 distinct molecules, 0 if not there",
+    "molecule_scores": "each candidate scored by its best similarity over the molecule's spectra"
+  },
+  "self_check": {
+    "validation_spectra": 10029,
+    "saved_spectra": 10029,
+    "same_spectra_in_same_order": true,
+    "top1_agreement": 1.0,
+    "top25_list_agreement": 1.0,
+    "top1_now": 0.7503240602253465,
+    "top1_saved": 0.7503240602253465
+  },
+  "by_group": [
+    {
+      "group": "all",
+      "spectra": 13769,
+      "molecules": 2998,
+      "molecules_with_training_spectra": 1011,
+      "spectrum_top1": 0.14823153460672525,
+      "spectrum_top5": 0.20553417096375917,
+      "spectrum_top25": 0.2411939864913937,
+      "spectrum_mrr25": 0.17407854186200855,
+      "spectrum_top1_molecule_averaged": 0.14348665381020284,
+      "molecule_top1": 0.15076717811874582,
+      "molecule_top5": 0.23315543695797197,
+      "molecule_top25": 0.2751834556370914,
+      "molecule_mrr25": 0.1867107380468273
+    },
+    {
+      "group": "class 1",
+      "spectra": 4758,
+      "molecules": 1011,
+      "molecules_with_training_spectra": 1011,
+      "spectrum_top1": 0.42896174863387976,
+      "spectrum_top5": 0.594787725935267,
+      "spectrum_top25": 0.6979823455233292,
+      "spectrum_mrr25": 0.5037594457540975,
+      "spectrum_top1_molecule_averaged": 0.4254925698545876,
+      "molecule_top1": 0.44708209693372897,
+      "molecule_top5": 0.6913946587537092,
+      "molecule_top25": 0.8160237388724035,
+      "molecule_mrr25": 0.553668439826299
+    },
+    {
+      "group": "class 2",
+      "spectra": 4474,
+      "molecules": 980,
+      "molecules_with_training_spectra": 0,
+      "spectrum_top1": 0.0,
+      "spectrum_top5": 0.0,
+      "spectrum_top25": 0.0,
+      "spectrum_mrr25": 0.0,
+      "spectrum_top1_molecule_averaged": 0.0,
+      "molecule_top1": 0.0,
+      "molecule_top5": 0.0,
+      "molecule_top25": 0.0,
+      "molecule_mrr25": 0.0
+    },
+    {
+      "group": "class 3",
+      "spectra": 4537,
+      "molecules": 1007,
+      "molecules_with_training_spectra": 0,
+      "spectrum_top1": 0.0,
+      "spectrum_top5": 0.0,
+      "spectrum_top25": 0.0,
+      "spectrum_mrr25": 0.0,
+      "spectrum_top1_molecule_averaged": 0.0,
+      "molecule_top1": 0.0,
+      "molecule_top5": 0.0,
+      "molecule_top25": 0.0,
+      "molecule_mrr25": 0.0
+    },
+    {
+      "group": "natural-product examples",
+      "spectra": 580,
+      "molecules": 124,
+      "molecules_with_training_spectra": 124,
+      "spectrum_top1": 0.6672413793103448,
+      "spectrum_top5": 0.7948275862068965,
+      "spectrum_top25": 0.8551724137931035,
+      "spectrum_mrr25": 0.7251987514838603,
+      "spectrum_top1_molecule_averaged": 0.6431650115117858,
+      "molecule_top1": 0.782258064516129,
+      "molecule_top5": 0.9032258064516129,
+      "molecule_top25": 0.9354838709677419,
+      "molecule_mrr25": 0.8370531400966184
+    },
+    {
+      "group": "molecules with training spectra",
+      "spectra": 4758,
+      "molecules": 1011,
+      "molecules_with_training_spectra": 1011,
+      "spectrum_top1": 0.42896174863387976,
+      "spectrum_top5": 0.594787725935267,
+      "spectrum_top25": 0.6979823455233292,
+      "spectrum_mrr25": 0.5037594457540975,
+      "spectrum_top1_molecule_averaged": 0.4254925698545876,
+      "molecule_top1": 0.44708209693372897,
+      "molecule_top5": 0.6913946587537092,
+      "molecule_top25": 0.8160237388724035,
+      "molecule_mrr25": 0.553668439826299
+    }
+  ],
+  "seconds": 105.61369681358337,
+  "gpu": "NVIDIA GeForce RTX 2080 Ti",
+  "pytorch_version": "2.5.1+cu124",
+  "python_version": "3.12.16"
+}

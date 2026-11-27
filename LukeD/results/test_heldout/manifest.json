@@ -1,0 +1,45 @@
+{
+  "created_utc": "2026-11-27T12:36:15Z",
+  "source": {
+    "heldout": "/user/work/zy26641/casmi26/Group-Sprint-2/enveda-CASMI26-molecule-id-mass-spectra-derived/heldout.parquet",
+    "split": "/user/work/zy26641/casmi26/Group-Sprint-2/model_datasets/stage_3_100pct"
+  },
+  "source_part": "exact, from the row groups of /user/work/zy26641/casmi26/Group-Sprint-2/enveda-CASMI26-molecule-id-mass-spectra/train.parquet",
+  "test_spectra": 13769,
+  "test_molecules": 2998,
+  "by_class": [
+    {
+      "sim_class": 1,
+      "molecules": 1011,
+      "spectra": 4758,
+      "molecules in the training split": 1011,
+      "natural-product molecules": 124
+    },
+    {
+      "sim_class": 2,
+      "molecules": 980,
+      "spectra": 4474,
+      "molecules in the training split": 0,
+      "natural-product molecules": 0
+    },
+    {
+      "sim_class": 3,
+      "molecules": 1007,
+      "spectra": 4537,
+      "molecules in the training split": 0,
+      "natural-product molecules": 0
+    }
+  ],
+  "checks": {
+    "test spectra also in the training split": 0,
+    "spectra of class 2 or 3 test molecules in the training split": 0,
+    "timsTOF spectra of class 1 test molecules in the training split": 0,
+    "test spectra also in the validation split": 0,
+    "spectra of class 2 or 3 test molecules in the validation split": 0,
+    "timsTOF spectra of class 1 test molecules in the validation split": 0,
+    "test spectra that are not timsTOF, or are dimers": 0,
+    "test spectra with no class": 0,
+    "test molecules not marked as test in molecules.parquet": 0,
+    "test molecules that are also validation molecules": 0
+  }
+}

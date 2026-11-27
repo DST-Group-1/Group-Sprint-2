@@ -22,7 +22,7 @@ python "$BP_DIR/dreams_score_test.py" \
     --ssl-checkpoint "$MODELS_DIR/ssl_model.ckpt" \
     --split "$SPLITS_DIR/stage_3_100pct" \
     --test "$TEST_DIR" \
-    --reference-predictions "$REPO/MichaelM/results_bluepebble/$run/validation_predictions.csv" \
+    --reference-predictions "$REPO/MichaelM/validation_results_bluepebble/$run/validation_predictions.csv" \
     --out "$REPO/MichaelM/results_bluepebble/${run}_test" \
     || { echo "!! DreaMS was NOT scored on the test set: see above"; exit 1; }
 echo "== DreaMS test results in MichaelM/results_bluepebble/${run}_test/"
