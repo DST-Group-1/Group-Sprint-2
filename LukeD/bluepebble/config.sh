@@ -24,6 +24,7 @@ export RAW_DIR="$REPO/$COMPETITION"                      # symlink to the Kaggle
 export DERIVED_DIR="$REPO/$COMPETITION-derived"          # written by LukeD/01
 export CASMI26_DERIVED_DIR="$DERIVED_DIR"                # read by LukeD/01 and ThomasF/03a
 export SPLITS_DIR="$REPO/model_datasets"                 # Michael's splits: stage_1_5pct (defines the validation set), stage_3_100pct
+export TEST_DIR="$SPLITS_DIR/test_heldout"               # the held-out test set from 01, built by job 07; score on it once
 export MODELS_DIR="$CASMI_WORK/models"                   # pretrained weights: ssl_model.ckpt, ms2deepscore_model.pt
 export CHECKPOINT_DIR="$CASMI_WORK/checkpoints"          # weights trained here (large, never committed)
 export OUTPUT_DIR_LARGE="$CASMI_WORK/results"            # large outputs such as embeddings (never committed)

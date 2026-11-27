@@ -21,10 +21,54 @@ its outputs as the record of the run (`*-bluepebble*.ipynb`).
 | mlp | `04_mlp` | `ThomasF/03a-fingerprint-mlp`, section 13 on the 100% split, reusing his saved runs | 1 GPU | 1-2 h | `ThomasF/results_bluepebble/` |
 | ms2ds | `05_ms2deepscore` | `DavidA/MS2DeepScore` in its 100% mode | 1 GPU | about 1 h | `DavidA/results_bluepebble/100pct/` |
 | dreams | `06_dreams` | `MichaelM/DreaMS_tuned_scaled_executed` on the 100% split, 3 epochs | 1 GPU | 15-24 h on an RTX 2080 | `MichaelM/results_bluepebble/` |
+| testset | `07_test_split` | `make_test_split.py`: the held-out test set, after checking none of it is in the 100% split | 4 cores | minutes | `LukeD/results/test_heldout/manifest.json` |
+| dreams_test | `08_dreams_test` | `dreams_score_test.py`: job 06's saved model on the test set | 1 GPU | 10-15 min | `MichaelM/results_bluepebble/dreams_100pct_3epochs_test/` |
+| mlp_test | `09_mlp_test` | `ThomasF/03a-fingerprint-mlp` again, every run loaded from job 04, plus a test-set section | 1 GPU | 30-60 min | `ThomasF/results_bluepebble/mlp_test/` |
+| ms2ds_test | `10_ms2ds_test` | `ms2ds_score_test.py`: job 05's reference library, searched with the test spectra | 1 GPU | about 10 min | `DavidA/results_bluepebble/100pct_test/` |
 
 `submit_all.sh` chains them: data, then scaling and splits; the three model jobs wait for the
 splits and for the smoke test. To skip the scaling benchmark, name the other steps:
 `bash submit_all.sh smoke data splits mlp ms2ds dreams`. Model weights, embeddings and the splits stay on work storage.
+`bash submit_all.sh test` scores the already-trained models on the held-out test set (next section).
+
+## The held-out test set (jobs 07 to 10)
+
+Jobs 04 to 06 score the models on the group's shared validation set, which Michael's split notebooks
+cut by spectrum, and the models use it to choose their best epoch. Those are validation scores. The
+report's final numbers come from a test set that played no part in training or in any choice:
+the test half of the held-out molecules from `LukeD/01` (`heldout.parquet`, `split == "test"`),
+2,998 molecules in three classes, 13,769 spectra. None of their query spectra is in `spectra_train`,
+so none is in Michael's splits either; job 07 checks this before anything is scored.
+
+```
+bash submit_all.sh test        # testset, then dreams_test, mlp_test and ms2ds_test, about an hour in all
+```
+
+Nothing is trained again. Each job loads what its training job saved, and first reproduces that
+job's validation results; if it cannot, it stops before touching the test set:
+
+| Job | Loads | Must reproduce |
+| --- | --- | --- |
+| `08_dreams_test` | `$CHECKPOINT_DIR/dreams_100pct.pt`, the best epoch of job 06 | job 06's `validation_predictions.csv` |
+| `09_mlp_test` | every run of job 04 from `$CASMI_WORK/mlp-cache`, including the final and group-split models | job 04's validation MRR (final model) and `val_spectra.parquet` (group-split model) |
+| `10_ms2ds_test` | job 05's reference embeddings in `$OUTPUT_DIR_LARGE/ms2deepscore_100pct` | job 05's `100pct_predictions.csv` |
+
+Then, from the repo root, `python LukeD/compare_models_test.py` puts the three side by side and checks
+they scored the same test spectra. Read the results by class:
+
+- DreaMS and MS2DeepScore can only answer with a molecule that has training spectra, so class 2 and
+  3 test molecules are misses for them by construction. The like-for-like rows use the training
+  split's molecules as the candidates for all three models; the group "molecules with training
+  spectra" is where they can actually be compared.
+- The MLP predicts a fingerprint, so it can also rank molecules it never trained on. Its other rows
+  add the test molecules to the candidates (class 3 withheld, as 01 specifies), which is the setting
+  closest to the Kaggle task.
+- Validation and test numbers are not directly comparable: the validation set is split by spectrum,
+  so most of its molecules were seen in training, while every test molecule was held out by molecule.
+
+Job 09 reruns Thomas's notebook in a copy of job 04's results folder on work storage, so job 04's
+committed files do not change. The executed copy, `ThomasF/03a-fingerprint-mlp-bluepebble-100pct-test.ipynb`,
+ends with the added section 15 (`mlp_test_cell.md` and `mlp_test_cell.py`, appended by `nbappend.py`).
 
 ## Before you start, on your laptop
 
